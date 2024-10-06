@@ -7,6 +7,7 @@ from tkinter import messagebox as mb
 from flask import Flask, render_template, redirect, url_for, g, request, render_template_string
 from tkinter import Tk, PhotoImage
 resources=os.path.join(os.getcwd(), os.pardir)+"/resources/"
+print(resources)
 db_path = resources+"Data.db"
 if not os.path.isfile(db_path):
     conn = sqlite3.connect(db_path)
