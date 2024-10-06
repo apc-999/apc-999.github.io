@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Show Issues</title>
+    <link rel="stylesheet" href="../resources/style.css">
+    <script>
+        function toggleDetails(id) {
+            const details = document.getElementById(id);
+            if (details.style.display === "none") {
+                details.style.display = "block";
+            } else {
+                details.style.display = "none";
+            }
+        }
+    </script>
+</head>
+
+<body>
+    {% extends 'base.html' %}
+
+    {% block title %}
+    Show Issue
+    {% endblock %}
+
+    {% block content %}
+    <h1>Issues List</h1>
+
+    {% if issues %}
+    <ul>
+        {% for issue in issues %}
+        <li>
+            <div class="issue-header" onclick="toggleDetails('issue-{{ loop.index }}')">
+                {{ issue[1] }} <!-- Issue Title -->
+            </div>
+            <div id="issue-{{ loop.index }}" class="issue-details">
+                <p><strong>{{ headers[0] }}:</strong> {{ issue[0] }}</p>
+                <p><strong>{{ headers[1] }}:</strong> {{ issue[1] }}</p>
+                <p><strong>{{ headers[2] }}:</strong> {{ issue[2] }}</p>
+                <p><strong>{{ headers[3] }}:</strong> {{ issue[3] }}</p>
+                <p><strong>{{ headers[4] }}:</strong> {{ issue[4] }}</p>
+                <p><strong>{{ headers[5] }}:</strong> {{ issue[5] }}</p>
+                <p><strong>{{ headers[6] }}:</strong> {{ issue[6] }}</p>
+                <p><strong>{{ headers[7] }}:</strong> {{ issue[7] }}</p>
+                <p><strong>Status:</strong> {{ "Open" if issue[8] == "TRUE" else "Closed" }}</p>
+                <p><strong>{{ headers[9] }}:</strong> {{ issue[9] }}</p>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No issues found.</p>
+    {% endif %}
+
+    <div class="button-container">
+        <a href="/" class="main-menu-button">Return to Main Menu</a>
+    </div>
+    {% endblock %}
+</body>
+
+</html>

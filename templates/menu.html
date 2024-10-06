@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Tracker Menu</title>
+    <link rel="stylesheet" href="../resources/style.css">
+</head>
+
+<body>
+    {% extends 'base.html' %}
+
+    {% block title %}
+    Add a New Issue
+    {% endblock %}
+
+    {% block content %}
+    <h1>Issue Tracker Menu</h1>
+
+    <div class="menu-container">
+        <a href="{{ url_for('show_issues') }}">Show All Issues</a>
+        <a href="{{ url_for('add_issue') }}">Add Issue</a>
+        <a href="{{ url_for('delete_issue') }}">Delete Issue</a>
+        <a href="{{ url_for('resolve_issue') }}">Resolve Issue</a>
+        <a href="{{ url_for('update_issue') }}">Update Issue</a>
+        <a href="{{ url_for('find_issue') }}">Find Issue</a>
+    </div>
+    {% endblock %}
+</body>
+
+</html>

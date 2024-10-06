@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../resources/style.css">
+    <title>Add Issue</title>
+</head>
+
+<body>
+    {% extends 'base.html' %}
+
+    {% block title %}
+    Add a New Issue
+    {% endblock %}
+
+    {% block content %}
+    <h1>Add New Issue</h1>
+    <form method="POST" action="{{ url_for('add_issue') }}">
+        <!-- ShortId -->
+        <label for="ShortId">Short ID:</label>
+        <input type="text" id="ShortId" name="ShortId" maxlength="10" required><br><br>
+
+        <!-- Title -->
+        <label for="Title">Title:</label>
+        <input type="text" id="Title" name="Title" required><br><br>
+
+        <!-- Severity -->
+        <label for="Severity">Severity:</label>
+        <select id="Severity" name="Severity" required>
+            <option value="">Select Severity</option>
+            <option value="1">1 - Customer facing function down</option>
+            <option value="2">2 - Customer facing function impaired</option>
+            <option value="2.5">2.5 - [Business hours] Customer facing function impared</option>
+            <option value="3">3 - Group productivity impaired</option>
+            <option value="4">4 - Individual productivity impaired</option>
+            <option value="5">5 - Productivity not impared</option>
+        </select><br><br>
+
+        <!-- Status -->
+        <label for="Status">Status:</label>
+        <select id="Status" name="Status" required>
+            <option value="">Select Status</option>
+            <option value="Assigned">Assigned</option>
+            <option value="Researching">Researching</option>
+            <option value="Work in Progress">Work in Progress</option>
+            <option value="Resolved">Resolved</option>
+        </select><br><br>
+
+        <!-- Assigned Group -->
+        <label for="AssignedGroup">Assigned Group:</label>
+        <input type="text" id="AssignedGroup" name="AssignedGroup" required><br><br>
+
+        <!-- Assignee Identity -->
+        <label for="AssigneeIdentity">Assignee Identity:</label>
+        <input type="text" id="AssigneeIdentity" name="AssigneeIdentity" required><br><br>
+
+        <!-- Create Date -->
+        <label for="CreateDate">Create Date:</label>
+        <input type="date" id="CreateDate" name="CreateDate" required><br><br>
+
+        <!-- Last Updated Date -->
+        <label for="LastUpdatedDate">Last Updated Date:</label>
+        <input type="date" id="LastUpdatedDate" name="LastUpdatedDate" value="{{ current_date }}" readonly><br><br>
+
+        <!-- Issue Open -->
+        <label for="IssueOpen">Issue Open:</label>
+        <input type="checkbox" id="IssueOpen" name="IssueOpen"><br><br>
+
+        <!-- Root Cause -->
+        <label for="RootCause">Root Cause:</label>
+        <textarea id="RootCause" name="RootCause"></textarea><br><br>
+
+        <!-- Submit Button -->
+        <button type="submit">Add Issue</button>
+    </form>
+
+    <!-- Return to Main Menu -->
+    <div class="button-container">
+        <a href="{{ url_for('menu') }}" class="main-menu-button">Return to Main Menu</a>
+    </div>
+    {% endblock %}
+</body>
+
+</html>

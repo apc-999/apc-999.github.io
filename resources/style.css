@@ -1,0 +1,80 @@
+/* style.css */
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f0f0f0;
+    margin: 20px;
+}
+
+.issue-header {
+    cursor: pointer;
+    padding: 10px;
+    border: 1px solid #ccc;
+    margin: 5px 0;
+    background-color: #f9f9f9;
+    transition: background-color 0.3s ease;
+}
+
+.issue-header:hover {
+    background-color: #f0f0f0;
+}
+
+.issue-details {
+    display: none;
+    margin: 10px auto;
+    padding: 10px;
+    text-align: left;
+    /* Aligns text to the left */
+    width: 80%;
+    /* Limits the width of the details section */
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.button-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+h1 {
+    margin-top: 50px;
+    color: #333;
+}
+
+.menu-container {
+    margin-top: 20px;
+}
+
+.menu-container a {
+    display: inline-block;
+    margin: 10px;
+    padding: 15px 30px;
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.menu-container a:hover {
+    background-color: #45a049;
+}
+
+.main-menu-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.main-menu-button:hover {
+    background-color: #45a049;
+}

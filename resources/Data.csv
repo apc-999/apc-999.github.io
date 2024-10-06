@@ -1,0 +1,18 @@
+ShortId,Title,Severity,Status,AssignedGroup,AssigneeIdentity,CreateDate,LastUpdatedDate,Issue open,Root cause
+X9785b94a3,Image not visible alarm,2,Assigned,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa3, 2022-11-08T13:03:59.513Z,2022-11-08T13:03:59.513Z,TRUE,Invalid format - use JPG next time
+F83434578,Heat memory alarm,3,Work In Progress,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa4,2022-10-27T16:29:05.131Z,2022-11-08T14:00:43.085Z,FALSE,The servers got too hot
+X9788b8495,Texture issues,3,Assigned,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa5,2022-11-03T00:08:42.174Z,2022-11-08T13:07:19.337Z,TRUE,The texture was lumpy it should've been smooth
+X977447533,Real input latency alarm,1,Assigned,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa6,2022-11-01T12:01:31.365Z,2022-11-10T11:01:15.635Z,FALSE,it wasn't being real
+F84985998,Native Application Not Responding on 4200X is in Alarm,3,Assigned,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa8,2022-11-11T10:53:54.671Z,2022-11-11T10:54:35.095Z,FALSE,Outdated hardware
+NTER-47a8, animation not visible with duration=0,3,Pending,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa9,2022-07-05T15:08:40.840Z,2022-07-07T09:17:20.479Z,TRUE,duration should be more than 0
+F84a87946,Tried to call Duktape.gc(),2.5,Assigned,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa10,2022-11-12T20:40:51.984Z,2022-11-12T20:42:01.205Z,FALSE,ducktape was spelt wrong
+F7326967b,Apple TV crash,5,Pending,Prime Video,56ah44dc-5cdd-6h24-d65a-2f3h9h4dafg2,2022-07-12T14:03:06.063Z,2022-10-07T12:43:37.549Z,TRUE,The company is bad
+X9772aa694,FPS Alarm,3,Assigned,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa3,2022-11-01T08:06:56.738Z,2022-11-14T10:06:57.297Z,FALSE,False alarm
+F83434494,Real input latency alarm - SONY ,4,Work In Progress,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa4,2022-10-27T16:28:06.894Z,2022-10-27T17:03:15.495Z,TRUE,Sony just released a new spiderman film which used all their server bandwidth
+F824a6889,AndroidTV crash rate increased,1,Pending,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa5,2022-10-18T14:27:28.143Z,2022-10-31T17:31:17.206Z,FALSE,More devices have started using the app
+F69756646, Roku models not responding,4,Pending,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa6,2022-06-08T13:52:37.690Z,2022-10-23T08:43:40.662Z,TRUE,Outdated hardware
+X97988b5b6,Animation FPS Alarm,3,Pending,Prime Video,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa7,2022-11-04T03:03:49.569Z,2022-11-11T10:11:45.116Z,FALSE,Animations are too slow
+F84a87946,There's a giant rat in the floor 4 kitchenette,1,Work In Progress,Prime Exterminators,56ah44dc-5cdd-6h24-c78e-2f3h9h7dgfa8,2022-11-14T09:01:24.124Z,2022-11-15T09:03:24.324Z,TRUE,There was cheese left out by apc999
+F24a86443,There were missing keys from the macbook m1 keyboards,4,Work In Progress,Amazon IT,56ap55cd-9cdd-6a24-c79e-2f2h9d7dgfa3,2022-11-14T09:01:24.124Z,2022-11-14T11:01:24.124Z,TRUE,Not yet determined
+A23D4F239,Referrer was spelt wrong,5,Assigned,Amazon Ads,stfgab,2022-11-15T09:03:24.324000Z,2023-03-24T18:00:15.657970Z,TRUE,Gabriele spelt referrer wrong and only used 1 r not 2
+F64D421,Communications error,4,Researching,Prime Video,mehamitt,2022-11-08T14:00:43.085000Z,2023-03-24T18:07:58.742775Z,FALSE,Mehak's name was mispronounced as Me-hak instead of meh-ak or m-hek
