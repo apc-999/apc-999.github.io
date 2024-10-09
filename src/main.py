@@ -175,7 +175,7 @@ def show_issues():
 
 @app.route('/add_issue', methods=['GET', 'POST'])
 def add_issue():
-    error="ha"
+    error=None
     if request.method == 'POST':
         rowtowrite = []
         headers = get_headers()
