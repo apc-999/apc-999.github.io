@@ -249,7 +249,6 @@ def add_issue():
             insert_data(rowtowrite)
             return redirect(url_for('show_issues'))
     else:
-    # For GET requests, show the form
         return render_template('add_issue.html')
 
 ##@app.route('/delete_issue')
