@@ -9,7 +9,7 @@ from tkinter import Tk, PhotoImage
 app = Flask(__name__, template_folder='../templates', static_folder='../resources')
 resources=os.path.join(app.root_path, os.pardir)+"/resources/"
 print(resources)
-db_path = resources+"Data.db"
+db_path = resources+"data.db"
 if not os.path.isfile(db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
