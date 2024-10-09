@@ -191,11 +191,13 @@ def add_issue():
             value=request.form.get(header)
             if header == 'CreateDate' or header == 'LastUpdatedDate':
                 if not value:
+                    print("there's an error")
                     error_message(error=f'{header} is required.')
                     return redirect(url_for('add_issue'))
                 try:
                     value = getDateTimeFromISO8601String(value).replace(tzinfo=None).isoformat()+"Z"
                 except:
+                    print("there's an error")
                     error_message(error="Please enter a valid date in ISO8601 format.")
                     return render_template('add_issue.html', error="All fields are required")
                 rowtowrite.append(value)
@@ -208,6 +210,7 @@ def add_issue():
                     else:
                         raise ValueError
                 except:
+                    print("there's an error")
                     error_message(error="Severity must be a SEV number between 1-5")
                     return render_template('add_issue.html', error="All fields are required")
                 rowtowrite.append(value)
@@ -219,12 +222,14 @@ def add_issue():
             elif header == 'Status':
                 valid_statuses = ["Assigned", "Researching", "Work in Progress", "Resolved"]
                 if value not in valid_statuses:
+                    print("there's an error")
                     error_message(error=f'Status must be one of {valid_statuses}')
                     return render_template('add_issue.html', error="All fields are required")
                 rowtowrite.append(value)
                 
             else:
                 if not value:
+                    print("there's an error")
                     error_message(error=f'{header} is required.')
                     return render_template('add_issue.html', error="All fields are required")
                 rowtowrite.append(value)
