@@ -17,7 +17,7 @@
 
     {% block content %}
     <h1>Add New Issue</h1>
-    <form method="POST" action="{{ url_for('add_issue') }}">
+    <form method="POST" action="/add_issue">
         <!-- ShortId -->
         <label for="ShortId">Short ID:</label>
         <input type="text" id="ShortId" name="ShortId" maxlength="10" required><br><br>

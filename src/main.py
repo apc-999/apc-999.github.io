@@ -188,49 +188,46 @@ def add_issue():
         
         # Process form data
         for header in headers:
+            value=request.form.get(header)
             if header == 'CreateDate' or header == 'LastUpdatedDate':
-                date_value = request.form.get(header)
-                if not date_value:
+                if not value:
                     error_message(error=f'{header} is required.')
                     return redirect(url_for('add_issue'))
                 try:
-                    date_value = getDateTimeFromISO8601String(date_value).replace(tzinfo=None).isoformat()+"Z"
+                    value = getDateTimeFromISO8601String(value).replace(tzinfo=None).isoformat()+"Z"
                 except:
                     error_message(error="Please enter a valid date in ISO8601 format.")
-                    return redirect(url_for('add_issue'))
-                rowtowrite.append(date_value)
+                    return render_template('add_issue.html', error="All fields are required")
+                rowtowrite.append(value)
                 
             elif header == 'Severity':
-                severity_value = request.form.get(header)
                 try:
-                    severity_value = float(severity_value)
-                    if 1 <= severity_value <= 5:
-                        severity_value = int(severity_value) if severity_value != 2.5 else severity_value
+                    value = float(value)
+                    if 1 <= value <= 5:
+                        value = int(value) if value != 2.5 else value
                     else:
                         raise ValueError
                 except:
                     error_message(error="Severity must be a SEV number between 1-5")
-                    return redirect(url_for('add_issue'))
-                rowtowrite.append(severity_value)
+                   return render_template('add_issue.html', error="All fields are required")
+                rowtowrite.append(value)
                 
             elif header == 'Issue open':
-                issue_open = request.form.get(header) == 'on'
+                issue_open = value == 'on'
                 rowtowrite.append(str(issue_open).upper())
                 
             elif header == 'Status':
-                status_value = request.form.get(header)
                 valid_statuses = ["Assigned", "Researching", "Work in Progress", "Resolved"]
-                if status_value not in valid_statuses:
+                if value not in valid_statuses:
                     error_message(error=f'Status must be one of {valid_statuses}')
-                    return redirect(url_for('add_issue'))
-                rowtowrite.append(status_value)
+                    return render_template('add_issue.html', error="All fields are required")
+                rowtowrite.append(value)
                 
             else:
-                text_value = request.form.get(header)
-                if not text_value:
+                if not value:
                     error_message(error=f'{header} is required.')
-                    return redirect(url_for('add_issue'))
-                rowtowrite.append(text_value)
+                    return render_template('add_issue.html', error="All fields are required")
+                rowtowrite.append(value)
 
         # Insert the new row into the database
         insert_data(rowtowrite)
