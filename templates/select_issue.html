@@ -21,18 +21,7 @@
         {% for issue in issues %}
         <li onclick="goToUpdate('{{ issue[0] }}')">
             <div class="issue-header">
-                {{ issue[1] }} <!-- Issue Title -->
-            </div>
-            <div class="issue-details">
-                <p><strong>{{ headers[0] }}:</strong> {{ issue[0] }}</p>
-                <p><strong>{{ headers[1] }}:</strong> {{ issue[1] }}</p>
-                <p><strong>{{ headers[2] }}:</strong> {{ issue[2] }}</p>
-                <p><strong>{{ headers[3] }}:</strong> {{ issue[3] }}</p>
-                <p><strong>{{ headers[4] }}:</strong> {{ issue[4] }}</p>
-                <p><strong>{{ headers[5] }}:</strong> {{ issue[5] }}</p>
-                <p><strong>{{ headers[6] }}:</strong> {{ issue[6] }}</p>
-                <p><strong>{{ headers[7] }}:</strong> {{ issue[7] }}</p>
-                <p><strong>Status:</strong> {{ "Open" if issue[8] == "TRUE" else "Closed" }}</p>
+                {{ issue[1] }} - {{issue[0]}} [SEV{{issue[2]}}]<!-- Issue Title -->
             </div>
         </li>
         {% endfor %}
