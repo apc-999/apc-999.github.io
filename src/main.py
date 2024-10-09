@@ -92,14 +92,16 @@ def delete_row(short_id):
     db = get_db()
     cursor = db.cursor()
     cursor.execute('DELETE FROM data WHERE ShortId = ?', (short_id,))
-    conn.commit()
+    db.commit()
     print(f"Row with ShortId {short_id} has been deleted.")
 def update_row(short_id, column, new_value):
+    print(short_id, column, new_value)
     db = get_db()
     cursor = db.cursor()
     query = f'''UPDATE data SET "{column}" = ? WHERE ShortId = ?'''
+    print(query)
     cursor.execute(query, (new_value, short_id))
-    conn.commit()
+    db.commit()
     print(f"Ticket ShortId {short_id} has been updated.")
 def current_datetime():
     return datetime.datetime.utcnow().isoformat()+"Z"
@@ -250,47 +252,100 @@ def add_issue():
     # For GET requests, show the form
         return render_template('add_issue.html')
 
-@app.route('/delete_issue')
+##@app.route('/delete_issue')
+##def delete_issue():
+##    all_rows = fetch_data()
+##    headers = get_headers()
+##    if not all_rows:
+##        print("There are no issues left to delete, try adding some")
+##        return
+##    line_count = 0
+##    for row in all_rows:
+##        print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
+##and was classed as {headers[2]} {row[2]}.''')
+##        print(f'''Ticket {headers[3]} is {row[3]} \
+##and is assigned to group {row[4]} with ID {row[5]}.''')
+##        print(f'Ticket was created {row[6]} and was last updated on {row[7]}.')
+##        status= "Open" if row[8]=="TRUE" else "Closed"
+##        print(f'The ticket is {status} the {headers[9]} identified is {row[9]}')
+##        delete=yes_no(f'Delete this ticket {row[0]}?')
+##        delete_row(row[0]) if delete else None
+@app.route('/delete_issue', methods=['GET', 'POST'])
 def delete_issue():
+    if request.method == 'POST':
+        # Get the ticket ID from the form submission
+        ticket_id = request.form.get('ticket_id')
+        if ticket_id:
+            delete_row(ticket_id)  # Call your function to delete the row
+            return redirect(url_for('delete_issue'))  # Redirect to the delete page after deletion
+
+    # For GET requests, display all rows
     all_rows = fetch_data()
     headers = get_headers()
-    if not all_rows:
-        print("There are no issues left to delete, try adding some")
-        return
-    line_count = 0
-    for row in all_rows:
-        print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
-and was classed as {headers[2]} {row[2]}.''')
-        print(f'''Ticket {headers[3]} is {row[3]} \
-and is assigned to group {row[4]} with ID {row[5]}.''')
-        print(f'Ticket was created {row[6]} and was last updated on {row[7]}.')
-        status= "Open" if row[8]=="TRUE" else "Closed"
-        print(f'The ticket is {status} the {headers[9]} identified is {row[9]}')
-        delete=yes_no(f'Delete this ticket {row[0]}?')
-        delete_row(row[0]) if delete else None
-@app.route('/resolve_issue')
+    return render_template('delete_issue.html', all_rows=all_rows, headers=headers)
+
+##@app.route('/resolve_issue')
+##def resolve_issue():
+##    all_rows = fetch_data()
+##    headers = get_headers()
+##    if not all_rows:
+##        print("There are no issues to resolve, please add some")
+##        return
+##    line_count = 0
+##    for row in all_rows:
+##        if row[8]=="TRUE":
+##            print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
+##and was classed as {headers[2]} {row[2]}.''')
+##            print(f'''Ticket {headers[3]} is {row[3]} \
+##and is assigned to group {row[4]} with ID {row[5]}.''')
+##            print(f'Ticket was created {row[6]} and was last updated on {row[7]}.')
+##            resolve=yes_no(f'Resolve this ticket')
+##            if resolve:
+##                update_row(row[0], '''"Issue open"''', "FALSE")
+##                update_row(row[0], "LastUpdatedDate",current_datetime())
+##                rootcause=yes_no("Do we know what the root cause is/Do we need to update the root cause?")
+##                if rootcause:
+##                    update_row(row[0], '''"Root cause"''', input("What was the root cause:\t"))
+##
+@app.route('/resolve_issue', methods=['GET', 'POST'])
 def resolve_issue():
     all_rows = fetch_data()
     headers = get_headers()
-    if not all_rows:
-        print("There are no issues to resolve, please add some")
-        return
-    line_count = 0
-    for row in all_rows:
-        if row[8]=="TRUE":
-            print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
-and was classed as {headers[2]} {row[2]}.''')
-            print(f'''Ticket {headers[3]} is {row[3]} \
-and is assigned to group {row[4]} with ID {row[5]}.''')
-            print(f'Ticket was created {row[6]} and was last updated on {row[7]}.')
-            resolve=yes_no(f'Resolve this ticket')
-            if resolve:
-                update_row(row[0], '''"Issue open"''', "FALSE")
-                update_row(row[0], "LastUpdatedDate",current_datetime())
-                rootcause=yes_no("Do we know what the root cause is/Do we need to update the root cause?")
-                if rootcause:
-                    update_row(row[0], '''"Root cause"''', input("What was the root cause:\t"))
-            
+
+    unresolved_issues = [row for row in all_rows if row[8] == "TRUE"]  # Assuming the status is in column 8
+    current_root_cause = None
+
+    if request.method == 'POST':
+        # Handle the form submission to resolve an issue
+        ticket_id = request.form.get('ticket_id')
+        root_cause = request.form.get('root_cause', '').strip()
+    
+
+        for row in unresolved_issues:
+            if row[0] == ticket_id:  # Adjust based on your ticket identifier
+                current_root_cause = row['Root cause']  # Use the actual column 
+        print(current_root_cause)
+        # If there's no current root cause, require a new one
+        if not current_root_cause and not root_cause:
+            return render_template('resolve_issue.html', 
+                                   unresolved_issues=unresolved_issues, 
+                                   headers=headers, 
+                                   error="Root cause is required to resolve this issue.",
+                                   current_root_cause=current_root_cause)
+        print(ticket_id)
+        update_row(ticket_id, 'Issue open', "FALSE")
+        update_row(ticket_id, "LastUpdatedDate", current_datetime())
+        if root_cause: 
+            update_row(ticket_id, 'Root cause', root_cause)
+
+        return redirect(url_for('resolve_issue'))  # Redirect to the same page to avoid resubmission
+
+    if not unresolved_issues:
+        print("There are no issues to resolve, please add some.")
+        return render_template('resolve_issue.html', error=error_message("No issues to resolve."))
+
+    return render_template('resolve_issue.html', unresolved_issues=unresolved_issues, all_rows=all_rows, headers=headers, current_root_cause=current_root_cause)
+
 @app.route('/update_issue')
 def update_issue():
     all_rows = fetch_data()
