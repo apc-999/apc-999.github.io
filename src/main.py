@@ -413,12 +413,25 @@ def resolve_issue():
 
 @app.route('/update_issue', methods=['GET', 'POST'])
 def update_issue():
-    ticket_id = request.args.get('ticket_id', None)  # Get the ticket ID if present
+    db = get_db()
+    cursor = db.cursor()
+    ticket_id = request.args.get('ticket_id')  # Get the ticket ID from the URL
+
+    if not ticket_id:
+        # If no ticket_id is provided, fetch all issues and render the selection page
+        all_rows = fetch_data()  # Fetch all rows
+        headers = get_headers()
+
+        if not all_rows:
+            return render_template('show_issues.html', error="There are no issues to update, maybe add some.")
+
+        return render_template('select_issue.html', issues=all_rows, headers=headers)
     
     if request.method == 'POST':
-        # This block handles the form submission for updating the issue
+        # This block handles form submission for updating the issue
         updated_data = {}
         headers = get_headers()
+        
         # Collect form data
         for header in headers:
             updated_data[header] = request.form.get(header)
@@ -428,24 +441,24 @@ def update_issue():
             if new_value and new_value.strip():  # Ensure no empty values
                 update_row(ticket_id, header, new_value)
         
-        return redirect(url_for('update_issue', ticket_id=ticket_id))
+        # After updating, redirect to show_issues or confirmation page
+        return redirect(url_for('show_issues'))  # or another success page
 
-    all_rows = fetch_data()
-    headers = get_headers()
+    else:
+        # For a GET request, fetch and display the issue's details in the form
+        query = "SELECT * FROM data WHERE ShortId = ?"
+        cursor.execute(query, (ticket_id,))
+        issue = cursor.fetchone()
 
-    if not all_rows:
-        return render_template('error.html', error="There are no issues to update, maybe add some.")
-
-    if ticket_id:
-        # If a ticket_id is passed, retrieve the specific issue details for editing
-        issue_to_edit = next((row for row in all_rows if row[0] == ticket_id), None)
-        if not issue_to_edit:
-            return render_template('error.html', error="Issue not found.")
+        if not issue:
+            return "Issue not found", 404  # Handle case where the ticket doesn't exist
         
-        return render_template('update_issue.html', issue=issue_to_edit, headers=headers)
+        headers = get_headers()
+        
+        # Render the form pre-filled with the issue's current details
+        return render_template('update_issue.html', issue=issue, headers=headers)
 
-    # If no ticket_id, show the list of issues
-    return render_template('select_issue.html', issues=all_rows, headers=headers)
+
 
 ##@app.route('/find_issue')
 ##def find_issue():

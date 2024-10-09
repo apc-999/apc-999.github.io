@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../resources/style.css">
+    <title>Update Issue</title>
+</head>
+
+<body>
+    {% extends 'base.html' %}
+
+    {% block title %}
+    Update Issue
+    {% endblock %}
+
+    {% block content %}
+    <h1>Update Issue</h1>
+    <form method="POST" action="{{ url_for('update_issue', ticket_id=issue[0]) }}">
+
+        <!-- Title -->
+        <label for="Title">Title:</label>
+        <input type="text" id="Title" name="Title" value="{{ issue[1] }}" required><br><br>
+
+        <!-- Severity -->
+        <label for="Severity">Severity:</label>
+        <select id="Severity" name="Severity" required>
+            <option value="">Select Severity</option>
+            <option value="1" {% if issue[2]=='1' %}selected{% endif %}>1 - Customer facing function down</option>
+            <option value="2" {% if issue[2]=='2' %}selected{% endif %}>2 - Customer facing function impaired</option>
+            <option value="2.5" {% if issue[2]=='2.5' %}selected{% endif %}>2.5 - [Business hours] Customer facing
+                function impaired</option>
+            <option value="3" {% if issue[2]=='3' %}selected{% endif %}>3 - Group productivity impaired</option>
+            <option value="4" {% if issue[2]=='4' %}selected{% endif %}>4 - Individual productivity impaired</option>
+            <option value="5" {% if issue[2]=='5' %}selected{% endif %}>5 - Productivity not impaired</option>
+        </select><br><br>
+
+        <!-- Status -->
+        <label for="Status">Status:</label>
+        <select id="Status" name="Status" required>
+            <option value="">Select Status</option>
+            <option value="Assigned" {% if issue[3]=='Assigned' %}selected{% endif %}>Assigned</option>
+            <option value="Researching" {% if issue[3]=='Researching' %}selected{% endif %}>Researching</option>
+            <option value="Work in Progress" {% if issue[3]=='Work in Progress' %}selected{% endif %}>Work in Progress
+            </option>
+            <option value="Resolved" {% if issue[3]=='Resolved' %}selected{% endif %}>Resolved</option>
+        </select><br><br>
+
+        <!-- Assigned Group -->
+        <label for="AssignedGroup">Assigned Group:</label>
+        <input type="text" id="AssignedGroup" name="AssignedGroup" value="{{ issue[4] }}" required><br><br>
+
+        <!-- Assignee Identity -->
+        <label for="AssigneeIdentity">Assignee Identity:</label>
+        <input type="text" id="AssigneeIdentity" name="AssigneeIdentity" value="{{ issue[5] }}" required><br><br>
+
+        <!-- Root Cause -->
+        <label for="Root cause">Root Cause:</label>
+        <textarea id="Root cause" name="Root cause">{{ issue[9] }}</textarea><br><br>
+
+        <!-- Submit Button -->
+        <button type="submit">Update Issue</button>
+    </form>
+
+    <!-- Return to Main Menu -->
+    <div class="button-container">
+        <a href="{{ url_for('menu') }}" class="main-menu-button">Return to Main Menu</a>
+    </div>
+    {% endblock %}
+</body>
+
+</html>
