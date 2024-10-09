@@ -6,7 +6,8 @@ import dateutil.parser
 from tkinter import messagebox as mb
 from flask import Flask, render_template, redirect, url_for, g, request, render_template_string
 from tkinter import Tk, PhotoImage
-resources=os.path.join(os.getcwd(), os.pardir)+"/resources/"
+app = Flask(__name__, template_folder='../templates', static_folder='../resources')
+resources=os.path.join(app.root_path, os.pardir)+"/resources/"
 print(resources)
 db_path = resources+"Data.db"
 if not os.path.isfile(db_path):
@@ -26,7 +27,6 @@ if not os.path.isfile(db_path):
         "Root cause" TEXT
     )
     ''')
-app = Flask(__name__, template_folder='../templates', static_folder='../resources')
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(db_path)
