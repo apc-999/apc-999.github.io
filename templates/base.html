@@ -3,17 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Default Title{% endblock %}</title>
+    <title>{% block title %}My App{% endblock %}</title>
     <link rel="stylesheet" href="../resources/style.css">
-    <!-- Link to Bootstrap and jQuery (shared by all pages) -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-
-    <!-- Include shared JavaScript (e.g., error handling) -->
-    <script src="{{ url_for('static', filename='js/error.js') }}"></script>
+    <!-- Optionally include Bootstrap CSS for modals -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -23,11 +18,8 @@
         <a class="navbar-brand" href="#">FlaskApp</a>
     </nav>
 
-    <!-- Main content block -->
     <div class="container">
-        {% block content %}
-        <!-- This is where child templates will insert their content -->
-        {% endblock %}
+        {% block content %}{% endblock %}
     </div>
 
     <!-- Optional footer -->
@@ -57,7 +49,24 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
+    <script>
+        function showError(message) {
+            // Set the error message in the modal body
+            document.getElementById('errorMessage').innerText = message;
+            // Show the modal
+            var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+            errorModal.show();
+        }
+
+        // Check if there is an error message to show
+        {% if error %}
+        window.onload = function () {
+            showError("{{ error }}");
+        };
+        {% endif %}
+    </script>
 </body>
 
 </html>

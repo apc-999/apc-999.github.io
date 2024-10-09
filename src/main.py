@@ -35,18 +35,12 @@ def get_db():
 def getDateTimeFromISO8601String(s):
     d = dateutil.parser.parse(s)
     return d
-def error_message(error=None):
+def error_message(page,error=None):
     msg = "ERROR!!!!!!!"
     if error:
         msg += "\n" + error
     # Inject a small inline script to trigger the error modal
-    return render_template_string(f'''
-        <script>
-            window.onload = function() {{
-                showError("{msg}");
-            }};
-        </script>
-    ''')
+    return render_template(page, error=error)
 ##    root = Tk()
 ##    root.withdraw()
 ##    root.tk.call('wm', 'iconphoto', root._w, PhotoImage(file=f'{resources}error.gif'))
@@ -192,13 +186,13 @@ def add_issue():
             if header == 'CreateDate' or header == 'LastUpdatedDate':
                 if not value:
                     print("there's an error at Date")
-                    error_message(error=f'{header} is required.')
+                    error_message("add_issue.html",error=f'{header} is required.')
                     return redirect(url_for('add_issue'))
                 try:
                     value = getDateTimeFromISO8601String(value).replace(tzinfo=None).isoformat()+"Z"
                 except:
                     print("there's an error at ISO Date")
-                    error_message(error="Please enter a valid date in ISO8601 format.")
+                    error_message("add_issue.html",error="Please enter a valid date in ISO8601 format.")
                     return render_template('add_issue.html', error="All fields are required")
                 rowtowrite.append(value)
                 
@@ -211,7 +205,7 @@ def add_issue():
                         raise ValueError
                 except:
                     print("there's an error at sev")
-                    error_message(error="Severity must be a SEV number between 1-5")
+                    error_message("add_issue.html",error="Severity must be a SEV number between 1-5")
                     return render_template('add_issue.html', error="All fields are required")
                 rowtowrite.append(value)
                 
@@ -223,14 +217,14 @@ def add_issue():
                 valid_statuses = ["Assigned", "Researching", "Work in Progress", "Resolved"]
                 if value not in valid_statuses:
                     print("there's an error at status")
-                    error_message(error=f'Status must be one of {valid_statuses}')
+                    error_message("add_issue.html",error=f'Status must be one of {valid_statuses}')
                     return render_template('add_issue.html', error="All fields are required")
                 rowtowrite.append(value)
                 
             else:
                 if not value:
                     print("there's an error at not value")
-                    error_message(error=f'{header} is required.')
+                    error_message("add_issue.html",error=f'{header} is required.')
                     return render_template('add_issue.html', error="All fields are required")
                 rowtowrite.append(value)
 
@@ -305,7 +299,7 @@ and was classed as {headers[2]} {row[2]}.''')
                                 try:
                                     changeto=getDateTimeFromISO8601String(input(f'{headers[column]}:\t')).replace(tzinfo=None).isoformat()+"Z"
                                 except:
-                                    error_message(error="That is not a valid date, Please use the ISO8601 UTC format")
+                                    error_message("update_issue.html",error="That is not a valid date, Please use the ISO8601 UTC format")
                                     main()
                                     exit()
                             elif headers[column]=="Severity5":
@@ -317,7 +311,7 @@ and was classed as {headers[2]} {row[2]}.''')
                                     else:
                                         raise ValueError
                                 except:
-                                    error_message(error="Severity must be a SEV number between 1-5\nHint: Make sure to just enter only the number (after SEV)")
+                                    error_message("update_issue.html",error="Severity must be a SEV number between 1-5\nHint: Make sure to just enter only the number (after SEV)")
                                     update_issue(CSV)
                                     return
                             elif "Short" in headers[column]:
@@ -327,21 +321,21 @@ and was classed as {headers[2]} {row[2]}.''')
                                 changeto=input(f'{headers[column]}:\t').capitalize()
                                 found = [ans for ans in statuses if ans.startswith(changeto[0])]
                                 if not found:
-                                    error_message(error=f'Status must be any one of the following: {statuses}')
+                                    error_message("update_issue.html",error=f'Status must be any one of the following: {statuses}')
                                     update_issue(CSV)
                                     return
                                 else:
                                     if len(found)>1:
                                         found = [ans for ans in statuses if ans.startswith(changeto[0:4])]
                                         if not found or len(found)>1:
-                                            error_message(error=f'Status must be any one of the following: {statuses}\nHint: Must contain at least the 4 starting letters')
+                                            error_message("update_issue.html",error=f'Status must be any one of the following: {statuses}\nHint: Must contain at least the 4 starting letters')
                                             main()
                                             exit()
                                     changeto=found[0]
                             else:
                                 changeto=input(f'{headers[column]}:\t')
                             if changeto == "":
-                                error_message(error="Field must not be left blank")
+                                error_message("update_issue.html",error="Field must not be left blank")
                                 update_issue()
                                 return
                             update_row(row[0],headers[column],changeto)
