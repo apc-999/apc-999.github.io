@@ -60,17 +60,13 @@
         <label for="CreateDate">Create Date:</label>
         <input type="date" id="CreateDate" name="CreateDate" required><br><br>
 
-        <!-- Last Updated Date -->
-        <label for="LastUpdatedDate">Last Updated Date:</label>
-        <input type="date" id="LastUpdatedDate" name="LastUpdatedDate" value="{{ current_date }}" readonly><br><br>
-
         <!-- Issue Open -->
-        <label for="IssueOpen">Issue Open:</label>
-        <input type="checkbox" id="IssueOpen" name="IssueOpen"><br><br>
+        <label for="Issue open">Is the issue open?</label>
+        <input type="checkbox" id="Issue open" name="Issue open"><br><br>
 
         <!-- Root Cause -->
-        <label for="RootCause">Root Cause:</label>
-        <textarea id="RootCause" name="RootCause"></textarea><br><br>
+        <label for="Root cause">Root Cause:</label>
+        <textarea id="Root cause" name="Root cause"></textarea><br><br>
 
         <!-- Submit Button -->
         <button type="submit">Add Issue</button>
@@ -78,7 +74,7 @@
 
     <!-- Return to Main Menu -->
     <div class="button-container">
-        <a href="{{ url_for('menu') }}" class="main-menu-button">Return to Main Menu</a>
+        <a href="{{ url_for('menu') }}" class=" main-menu-button">Return to Main Menu</a>
     </div>
     {% endblock %}
 </body>
