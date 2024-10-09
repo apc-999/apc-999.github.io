@@ -209,7 +209,7 @@ def add_issue():
                         raise ValueError
                 except:
                     error_message(error="Severity must be a SEV number between 1-5")
-                   return render_template('add_issue.html', error="All fields are required")
+                    return render_template('add_issue.html', error="All fields are required")
                 rowtowrite.append(value)
                 
             elif header == 'Issue open':
