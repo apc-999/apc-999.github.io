@@ -249,6 +249,7 @@ def add_issue():
             insert_data(rowtowrite)
             return redirect(url_for('show_issues'))
     else:
+    # For GET requests, show the form
         return render_template('add_issue.html')
 
 ##@app.route('/delete_issue')
@@ -345,96 +346,159 @@ def resolve_issue():
 
     return render_template('resolve_issue.html', unresolved_issues=unresolved_issues, all_rows=all_rows, headers=headers, current_root_cause=current_root_cause)
 
-@app.route('/update_issue')
+##@app.route('/update_issue')
+##def update_issue():
+##    all_rows = fetch_data()
+##    headers = get_headers()
+##    if not all_rows:
+##        print("There are no issues to update, maybe add some")
+##        return
+##    line_count = 0
+##    for row in all_rows:
+##            print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
+##and was classed as {headers[2]} {row[2]}.''')
+##            wantto=yes_no(f'Do You want to update this issue {row[0]}')
+##            if wantto:
+##                for column in range(len(row)):
+##                    if headers[column]=="LastUpdatedDate":
+##                        changeto=current_datetime()
+##                    elif headers[column]!="Issue open":
+##                        changeit=yes_no(f'Do You want to change {headers[column]} it is currently {row[column]}')
+##                        if changeit:
+##                            if "Date" in headers[column]:
+##                                try:
+##                                    changeto=getDateTimeFromISO8601String(input(f'{headers[column]}:\t')).replace(tzinfo=None).isoformat()+"Z"
+##                                except:
+##                                    error = error_message("update_issue.html",error="That is not a valid date, Please use the ISO8601 UTC format")
+##                                    main()
+##                                    exit()
+##                            elif headers[column]=="Severity5":
+##                                try:
+##                                    changeto=float(input(f'{headers[column]}:\t'))
+##                                    if 1<=changeto<=5:
+##                                        if changeto != 2.5:
+##                                            changeto=int(changeto)
+##                                    else:
+##                                        raise ValueError
+##                                except:
+##                                    error = error_message("update_issue.html",error="Severity must be a SEV number between 1-5\nHint: Make sure to just enter only the number (after SEV)")
+##                                    update_issue(CSV)
+##                                    return
+##                            elif "Short" in headers[column]:
+##                                changeto=input(f'{headers[column]}:\t')[0:10]
+##                            elif headers[column]=="Status":
+##                                statuses=["Assigned","Researching","Work in Progress", "Resolved"]
+##                                changeto=input(f'{headers[column]}:\t').capitalize()
+##                                found = [ans for ans in statuses if ans.startswith(changeto[0])]
+##                                if not found:
+##                                    error = error_message("update_issue.html",error=f'Status must be any one of the following: {statuses}')
+##                                    update_issue(CSV)
+##                                    return
+##                                else:
+##                                    if len(found)>1:
+##                                        found = [ans for ans in statuses if ans.startswith(changeto[0:4])]
+##                                        if not found or len(found)>1:
+##                                            error = error_message("update_issue.html",error=f'Status must be any one of the following: {statuses}\nHint: Must contain at least the 4 starting letters')
+##                                            main()
+##                                            exit()
+##                                    changeto=found[0]
+##                            else:
+##                                changeto=input(f'{headers[column]}:\t')
+##                            if changeto == "":
+##                                error = error_message("update_issue.html",error="Field must not be left blank")
+##                                update_issue()
+##                                return
+##                            update_row(row[0],headers[column],changeto)
+
+
+@app.route('/update_issue', methods=['GET', 'POST'])
 def update_issue():
+    ticket_id = request.args.get('ticket_id', None)  # Get the ticket ID if present
+    
+    if request.method == 'POST':
+        # This block handles the form submission for updating the issue
+        updated_data = {}
+        headers = get_headers()
+        # Collect form data
+        for header in headers:
+            updated_data[header] = request.form.get(header)
+        
+        # Update each field in the database where there was a change
+        for header, new_value in updated_data.items():
+            if new_value and new_value.strip():  # Ensure no empty values
+                update_row(ticket_id, header, new_value)
+        
+        return redirect(url_for('update_issue', ticket_id=ticket_id))
+
     all_rows = fetch_data()
     headers = get_headers()
+
     if not all_rows:
-        print("There are no issues to update, maybe add some")
-        return
-    line_count = 0
-    for row in all_rows:
-            print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
-and was classed as {headers[2]} {row[2]}.''')
-            wantto=yes_no(f'Do You want to update this issue {row[0]}')
-            if wantto:
-                for column in range(len(row)):
-                    if headers[column]=="LastUpdatedDate":
-                        changeto=current_datetime()
-                    elif headers[column]!="Issue open":
-                        changeit=yes_no(f'Do You want to change {headers[column]} it is currently {row[column]}')
-                        if changeit:
-                            if "Date" in headers[column]:
-                                try:
-                                    changeto=getDateTimeFromISO8601String(input(f'{headers[column]}:\t')).replace(tzinfo=None).isoformat()+"Z"
-                                except:
-                                    error = error_message("update_issue.html",error="That is not a valid date, Please use the ISO8601 UTC format")
-                                    main()
-                                    exit()
-                            elif headers[column]=="Severity5":
-                                try:
-                                    changeto=float(input(f'{headers[column]}:\t'))
-                                    if 1<=changeto<=5:
-                                        if changeto != 2.5:
-                                            changeto=int(changeto)
-                                    else:
-                                        raise ValueError
-                                except:
-                                    error = error_message("update_issue.html",error="Severity must be a SEV number between 1-5\nHint: Make sure to just enter only the number (after SEV)")
-                                    update_issue(CSV)
-                                    return
-                            elif "Short" in headers[column]:
-                                changeto=input(f'{headers[column]}:\t')[0:10]
-                            elif headers[column]=="Status":
-                                statuses=["Assigned","Researching","Work in Progress", "Resolved"]
-                                changeto=input(f'{headers[column]}:\t').capitalize()
-                                found = [ans for ans in statuses if ans.startswith(changeto[0])]
-                                if not found:
-                                    error = error_message("update_issue.html",error=f'Status must be any one of the following: {statuses}')
-                                    update_issue(CSV)
-                                    return
-                                else:
-                                    if len(found)>1:
-                                        found = [ans for ans in statuses if ans.startswith(changeto[0:4])]
-                                        if not found or len(found)>1:
-                                            error = error_message("update_issue.html",error=f'Status must be any one of the following: {statuses}\nHint: Must contain at least the 4 starting letters')
-                                            main()
-                                            exit()
-                                    changeto=found[0]
-                            else:
-                                changeto=input(f'{headers[column]}:\t')
-                            if changeto == "":
-                                error = error_message("update_issue.html",error="Field must not be left blank")
-                                update_issue()
-                                return
-                            update_row(row[0],headers[column],changeto)
-@app.route('/find_issue')
+        return render_template('error.html', error="There are no issues to update, maybe add some.")
+
+    if ticket_id:
+        # If a ticket_id is passed, retrieve the specific issue details for editing
+        issue_to_edit = next((row for row in all_rows if row[0] == ticket_id), None)
+        if not issue_to_edit:
+            return render_template('error.html', error="Issue not found.")
+        
+        return render_template('update_issue.html', issue=issue_to_edit, headers=headers)
+
+    # If no ticket_id, show the list of issues
+    return render_template('select_issue.html', issues=all_rows, headers=headers)
+
+##@app.route('/find_issue')
+##def find_issue():
+##                            db = get_db()
+##    cursor = db.cursor()
+##    issue=input("Search:\t")
+##    query = f'''SELECT * FROM data WHERE ShortId LIKE ? OR Title LIKE ? OR Severity LIKE ? OR Status LIKE ? OR AssignedGroup LIKE ? OR AssigneeIdentity LIKE ? OR "Root cause" LIKE ?'''
+##    search_term = f"%{issue}%"
+##    cursor.execute(query, (search_term, search_term, search_term, search_term, search_term, search_term, search_term))
+##    matching_rows = cursor.fetchall()
+##    headers = get_headers()
+##    if not matching_rows:
+##        print("No issues found matching that search, check Your input and try again.")
+##        return
+##    line_count = 0
+##    for row in matching_rows:    
+##            print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
+##and was classed as {headers[2]} {row[2]}.''')
+##            print(f'''Ticket {headers[3]} is {row[3]} \
+##and is assigned to group {row[4]} with ID {row[5]}.''')
+##            print(f'Ticket was created {row[6]} and was last updated on {row[7]}.')
+##            status= "Open" if row[8]=="TRUE" else "Closed"
+##            print(f'The ticket is {status} the {headers[9]} identified is {row[9]}')
+##            line_count += 1
+##            try:
+##                if row[10]:
+##                    print(f"Additional information includes: {row[10:]}")
+##            except:
+##                continue
+##    print(f'Processed {line_count} lines.')
+
+@app.route('/find_issue', methods=['GET', 'POST'])
 def find_issue():
-    issue=input("Search:\t")
-    query = f'''SELECT * FROM data WHERE ShortId LIKE ? OR Title LIKE ? OR Severity LIKE ? OR Status LIKE ? OR AssignedGroup LIKE ? OR AssigneeIdentity LIKE ? OR "Root cause" LIKE ?'''
-    search_term = f"%{issue}%"
-    cursor.execute(query, (search_term, search_term, search_term, search_term, search_term, search_term, search_term))
-    matching_rows = cursor.fetchall()
-    headers = get_headers()
-    if not matching_rows:
-        print("No issues found matching that search, check Your input and try again.")
-        return
-    line_count = 0
-    for row in matching_rows:    
-            print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
-and was classed as {headers[2]} {row[2]}.''')
-            print(f'''Ticket {headers[3]} is {row[3]} \
-and is assigned to group {row[4]} with ID {row[5]}.''')
-            print(f'Ticket was created {row[6]} and was last updated on {row[7]}.')
-            status= "Open" if row[8]=="TRUE" else "Closed"
-            print(f'The ticket is {status} the {headers[9]} identified is {row[9]}')
-            line_count += 1
-            try:
-                if row[10]:
-                    print(f"Additional information includes: {row[10:]}")
-            except:
-                continue
-    print(f'Processed {line_count} lines.')
+    db = get_db()
+    cursor = db.cursor()
+    headers = get_headers()  # Assumes you have a function to get column headers
+    matching_rows = []  # Initialize empty list to hold results
+
+    if request.method == 'POST':  # When the search form is submitted
+        search_term = request.form.get('search_term')
+        query = '''SELECT * FROM data 
+                   WHERE ShortId LIKE ? OR Title LIKE ? OR Severity LIKE ? 
+                   OR Status LIKE ? OR AssignedGroup LIKE ? 
+                   OR AssigneeIdentity LIKE ? OR "Root cause" LIKE ?'''
+        search_term_wildcard = f"%{search_term}%"
+        cursor.execute(query, (search_term_wildcard, search_term_wildcard, 
+                               search_term_wildcard, search_term_wildcard, 
+                               search_term_wildcard, search_term_wildcard, 
+                               search_term_wildcard))
+        matching_rows = cursor.fetchall()
+
+    return render_template('find_issue.html', headers=headers, matching_rows=matching_rows)
+
 
 @app.route('/')
 def menu():
