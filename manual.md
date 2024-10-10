@@ -86,7 +86,7 @@ The Issue Tracking System is designed to help users manage and track issues effi
 
 1. Access the **Admin** page.
 2. Here, you can:
-   - Update user details (username, role, profile image).
+   - Update user details (username, role, profile image). Profile image may not work on pythonanywhere due to a limitation of the free hosting site, it does however work locally.
    - Reset user passwords.
    - View all registered users.
 
