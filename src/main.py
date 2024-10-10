@@ -3,68 +3,91 @@ import os
 import datetime
 import sys
 import dateutil.parser
-from tkinter import messagebox as mb
-from flask import Flask, render_template, redirect, url_for, g, request, render_template_string, session, flash
-from tkinter import Tk, PhotoImage
-from werkzeug.utils import secure_filename
 import hashlib
+from flask import Flask, render_template, redirect, url_for, g, request, flash, session
+
 app = Flask(__name__, template_folder='../templates', static_folder='../resources')
 app.secret_key = 'QAsucks'
-resources=os.path.join(app.root_path, os.pardir)+"/resources/"
-app.config['UPLOAD_FOLDER'] = resources+'static/images'
-if not os.path.exists(app.config['UPLOAD_FOLDER'] ):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
-db_path = resources+"data.db"
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS data (
-    ShortId TEXT,
-    Title TEXT,
-    Severity TEXT,
-    Status TEXT,
-    AssignedGroup TEXT,
-    AssigneeIdentity TEXT,
-    CreateDate TEXT,
-    LastUpdatedDate TEXT,
-    "Issue open" BOOLEAN,
-    "Root cause" TEXT
-)
-''')
-cursor.execute('''CREATE TABLE IF NOT EXISTS "users" (
-	"id"	INTEGER NOT NULL,
-	"username"	TEXT NOT NULL UNIQUE,
-	"password"	TEXT NOT NULL,
-	"role"	TEXT NOT NULL DEFAULT 'user',
-	"profile-img"	TEXT NOT NULL DEFAULT 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
-	PRIMARY KEY("id" AUTOINCREMENT)
-)''')
-conn.commit()
-conn.close()
 
+# Define paths for resources
+resources = os.path.join(app.root_path, os.pardir) + "/resources/"
+app.config['UPLOAD_FOLDER'] = os.path.join(resources, 'static/images')
+
+# Ensure the upload folder exists
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
+# Database initialisation
+db_path = os.path.join(resources, "data.db")
+
+# Function to initialise the database and create necessary tables
+def init_db():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    # Create data table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS data (
+        ShortId TEXT,
+        Title TEXT,
+        Severity TEXT,
+        Status TEXT,
+        AssignedGroup TEXT,
+        AssigneeIdentity TEXT,
+        CreateDate TEXT,
+        LastUpdatedDate TEXT,
+        "Issue open" BOOLEAN,
+        "Root cause" TEXT
+    )
+    ''')
+    # Create users table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS "users" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "username" TEXT NOT NULL UNIQUE,
+        "password" TEXT NOT NULL,
+        "role" TEXT NOT NULL DEFAULT 'user',
+        "profile-img" TEXT NOT NULL DEFAULT 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'
+    )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Call init_db() to ensure the database is ready
+init_db()
+
+# Function to hash passwords
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
+# Database connection management
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(db_path)
         g.db.row_factory = sqlite3.Row
     return g.db
-def get_user_info(user_id,return_info):
+
+# Function to get user information from the database
+def get_user_info(user_id, return_info):
     db = get_db()
     cursor = db.cursor()
     cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
     result = cursor.fetchone()
     return result[return_info] if result else None
+
 app.jinja_env.globals.update(get_user_info=get_user_info)
-def getDateTimeFromISO8601String(s):
-    d = dateutil.parser.parse(s)
-    return d
+
+# Function to parse ISO 8601 date strings
+def get_datetime_from_iso8601_string(s):
+    return dateutil.parser.parse(s)
+
+# Function to generate error messages
 def error_message(error=None):
     msg = "ERROR!!!!!!!"
     if error:
-        msg += "\n" + error
+        msg += f"\n{error}"
     return msg
+
+# Function to insert data into the database
 def insert_data(row):
     with get_db() as db:
         cursor = db.cursor()
@@ -72,100 +95,116 @@ def insert_data(row):
         INSERT INTO data (ShortId, Title, Severity, Status, AssignedGroup, AssigneeIdentity, CreateDate, LastUpdatedDate, "Issue open", "Root cause")
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', row)
         db.commit()
+
+# Function to fetch all data rows from the database
 def fetch_data():
     db = get_db()
     cursor = db.cursor()
     cursor.execute('SELECT * FROM data')
     return cursor.fetchall()
+
+# Function to get database headers
 def get_headers():
     db = get_db()
     cursor = db.cursor()
     cursor.execute("PRAGMA table_info(data)")
     columns_info = cursor.fetchall()
-    headers = [column[1] for column in columns_info]
-    return headers
+    return [column[1] for column in columns_info]
+
+# Function to delete a row based on ShortId
 def delete_row(short_id):
     with get_db() as db:
         cursor = db.cursor()
         cursor.execute('DELETE FROM data WHERE ShortId = ?', (short_id,))
         db.commit()
     print(f"Row with ShortId {short_id} has been deleted.")
+
+# Function to update a row based on ShortId
 def update_row(short_id, column, new_value):
-    print(short_id, column, new_value)
     with get_db() as db:
         cursor = db.cursor()
-        query = f'''UPDATE data SET "{column}" = ? WHERE ShortId = ?'''
-        cursor.execute(query, (new_value, short_id))
+        cursor.execute(f'UPDATE data SET "{column}" = ? WHERE ShortId = ?', (new_value, short_id))
         db.commit()
     print(f"Ticket ShortId {short_id} has been updated.")
+
+# Function to get the current datetime in ISO format
 def current_datetime():
-    return datetime.datetime.utcnow().isoformat()+"Z"
+    return datetime.datetime.utcnow().isoformat() + "Z"
+
+# View all issues
 @app.route('/show_issues')
 def show_issues():
-    error=request.args.get('error')
+    error = request.args.get('error')
     all_rows = fetch_data()
     headers = get_headers()
     if not all_rows:
         return "There are no issues currently, please add some."
-
     return render_template('show_issues.html', error=error, headers=headers, issues=all_rows)
+
+# Add an issue
 @app.route('/add_issue', methods=['GET', 'POST'])
 def add_issue():
-    error=request.args.get('error')
+    error = request.args.get('error')
     if 'user_id' not in session:
         return redirect(url_for('show_issues'))
+    
     if request.method == 'POST':
         rowtowrite = []
         headers = get_headers()
+        
         for header in headers:
-            value=request.form.get(header)
-            if header == 'CreateDate' or header == 'LastUpdatedDate':
-                if header=="LastUpdatedDate":
-                    value=current_datetime()
+            value = request.form.get(header)
+            if header in ('CreateDate', 'LastUpdatedDate'):
+                # Handle date fields
+                if header == "LastUpdatedDate":
+                    value = current_datetime()
                 elif not value:
-                    error = error_message(error=f'{header} is required.')
+                    error = error_message(f'{header} is required.')
                     break
                 try:
-                    value = getDateTimeFromISO8601String(value).replace(tzinfo=None).isoformat()+"Z"
-                except:
-                    error = error_message(error="Please enter a valid date in ISO8601 format.")
+                    value = get_datetime_from_iso8601_string(value).replace(tzinfo=None).isoformat() + "Z"
+                except Exception:
+                    error = error_message("Please enter a valid date in ISO8601 format.")
                     break
                 rowtowrite.append(value)
                 
             elif header == 'Severity':
+                # Validate severity
                 try:
                     value = float(value)
                     if 1 <= value <= 5:
                         value = int(value) if value != 2.5 else value
                     else:
                         raise ValueError
-                except:
-                    error = error_message(error="Severity must be a SEV number between 1-5")
-                    failed=True
+                except Exception:
+                    error = error_message("Severity must be a SEV number between 1-5")
                     break
                 rowtowrite.append(value)
                 
             elif header == 'Issue open':
-                issue_open = value == 'on'
-                rowtowrite.append(str(issue_open).upper())
+                # Handle boolean values
+                rowtowrite.append(str(value == 'on').upper())
                 
             elif header == 'Status':
+                # Validate status
                 valid_statuses = ["Assigned", "Researching", "Work in Progress", "Resolved"]
                 if value not in valid_statuses:
-                    error = error_message(error=f'Status must be one of {valid_statuses}')
-                    failed=True
+                    error = error_message(f'Status must be one of {valid_statuses}')
                     break
                 rowtowrite.append(value)
+
             elif header == 'Root cause':
+                # Ensure root cause is provided if issue is open
                 if not value and str(rowtowrite[-1]).upper() == "FALSE":
-                    error = error_message( error=f'Root Cause is required if the issue is open.')
+                    error = error_message('Root Cause is required if the issue is open.')
                     break
                 rowtowrite.append(value)
             else:
                 if not value:
-                    error = error_message(error=f'{header} is required.')
+                    error = error_message(f'{header} is required.')
                     break
                 rowtowrite.append(value)
+
         if error:
             return render_template('add_issue.html', error=error)
         else:
@@ -173,23 +212,27 @@ def add_issue():
             return redirect(url_for('show_issues'))
     else:
         return render_template('add_issue.html')
+
+# Deleting issues
 @app.route('/delete_issue', methods=['GET', 'POST'])
 def delete_issue():
-    error=request.args.get('error')
+    error = request.args.get('error')
     if 'user_id' not in session:
         return redirect(url_for('show_issues'))
-    elif get_user_info(session['user_id'],3) != "admin":
-        return redirect(url_for('show_issues',error=error_message("Must be an admin to access that page")))
+    elif get_user_info(session['user_id'], 3) != "admin":
+        return redirect(url_for('show_issues', error=error_message("Must be an admin to access that page")))
+    
     if request.method == 'POST':
         ticket_id = request.form.get('ticket_id')
         if ticket_id:
             delete_row(ticket_id)
             return redirect(url_for('delete_issue'))
 
-    # For GET requests, display all rows
     all_rows = fetch_data()
     headers = get_headers()
-    return render_template('delete_issue.html', all_rows=all_rows, headers=headers,error=error)
+    return render_template('delete_issue.html', all_rows=all_rows, headers=headers, error=error)
+
+# Resolve an issue
 @app.route('/resolve_issue', methods=['GET', 'POST'])
 def resolve_issue():
     if 'user_id' not in session:
@@ -227,6 +270,7 @@ def resolve_issue():
 
     return render_template('resolve_issue.html', error=error,unresolved_issues=unresolved_issues, all_rows=all_rows, headers=headers, current_root_cause=current_root_cause)
 
+# Updating issues
 @app.route('/update_issue', methods=['GET', 'POST'])
 def update_issue():
     if 'user_id' not in session:
@@ -271,7 +315,7 @@ def update_issue():
         
         return render_template('update_issue.html', issue=issue, headers=headers)
 
-
+# Search for [an] issue(s)
 @app.route('/find_issue', methods=['GET', 'POST'])
 def find_issue():
     if 'user_id' not in session:
@@ -296,6 +340,7 @@ def find_issue():
 
     return render_template('find_issue.html', headers=headers, matching_rows=matching_rows)
 
+# Register an account
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     error=request.args.get('error')
@@ -320,6 +365,7 @@ def signup():
     
     return render_template('signup.html',error=error)
 
+# Log in to an account
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error=request.args.get('error')
@@ -346,6 +392,8 @@ def login():
             error=error_message('Invalid username or password.')
     
     return render_template('login.html',error=error)
+
+# Change password in a rare case that the password was reset
 @app.route('/change_password', methods=['GET', 'POST'])
 def change_password():
     if 'user_id' not in session:
@@ -366,6 +414,8 @@ def change_password():
         return redirect(url_for('menu'))
 
     return render_template('change_password.html')
+
+# Admin dashboard for user management
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     error=request.args.get('error')
@@ -405,21 +455,21 @@ def admin():
     
     return render_template('admin.html', users=users, error=error)
 
+# Main menu
 @app.route('/')
 def menu():
     if 'user_id' not in session:
         return redirect(url_for('show_issues'))
-    return render_template('menu.html',role=get_user_info(session.get('user_id'),3))
-# Logout route
+    return render_template('menu.html', role=get_user_info(session.get('user_id'), 3))
+
+# Logout of an account
 @app.route('/logout')
 def logout():
-    session.pop('username', None)
-    session.pop('role', None)
     session.pop('user_id', None)
     flash('You have been logged out.', 'success')
     return redirect(url_for('login'))
 
+
+# Not called by PythonAnywhere
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
-
-
