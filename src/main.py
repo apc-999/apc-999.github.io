@@ -10,12 +10,12 @@ from werkzeug.utils import secure_filename
 import hashlib
 app = Flask(__name__, template_folder='../templates', static_folder='../resources')
 app.secret_key = 'QAsucks'
-app.config['UPLOAD_FOLDER'] = '../resources/static/images'
+
+resources=os.path.join(app.root_path, os.pardir)+"/resources/"
+app.config['UPLOAD_FOLDER'] = resources+'/static/images'
 
 if not os.path.exists(app.config['UPLOAD_FOLDER'] ):
     os.makedirs(app.config['UPLOAD_FOLDER'])
-
-resources=os.path.join(app.root_path, os.pardir)+"/resources/"
 print(resources)
 db_path = resources+"data.db"
 conn = sqlite3.connect(db_path)
@@ -69,43 +69,14 @@ def error_message(error=None):
     if error:
         msg += "\n" + error
     return msg
-##    root = Tk()
-##    root.withdraw()
-##    root.tk.call('wm', 'iconphoto', root._w, PhotoImage(file=f'{resources}error.gif'))
-##    msg="ERROR!!!!!!!"
-##    if error:
-##        msg+="\n"+error
-##    mb.showinfo(title='Error', message=msg)
-##    root.destroy()
-##    try:
-##        root.update()
-##    except:
-##        root=None
-##    return
-def yes_no(question):
-    root = Tk()
-    root.withdraw()
-    root.tk.call('wm', 'iconphoto', root._w, PhotoImage(file=f'{resources}question.png'))
-    msg= mb.askquestion(title='Question, Yes or No?', message=question)
-    root.destroy()
-    try:
-        root.update()
-    except:
-        root=None
-    return msg == "yes"
-def confirmation():
-    confirm = yes_no("Are You sure?")
-    if not confirm:
-        main()
-    exit()
 def insert_data(row):
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute('''
-    INSERT INTO data (ShortId, Title, Severity, Status, AssignedGroup, AssigneeIdentity, CreateDate, LastUpdatedDate, "Issue open", "Root cause")
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', row)
-    db.commit()
-    db.close()
+    with get_db() as db:
+        print(row)
+        cursor = db.cursor()
+        cursor.execute('''
+        INSERT INTO data (ShortId, Title, Severity, Status, AssignedGroup, AssigneeIdentity, CreateDate, LastUpdatedDate, "Issue open", "Root cause")
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', row)
+        db.commit()
 def fetch_data():
     db = get_db()
     cursor = db.cursor()
@@ -119,11 +90,10 @@ def get_headers():
     headers = [column[1] for column in columns_info]
     return headers
 def delete_row(short_id):
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute('DELETE FROM data WHERE ShortId = ?', (short_id,))
-    db.commit()
-    db.close()
+    with get_db() as db:
+        cursor = db.cursor()
+        cursor.execute('DELETE FROM data WHERE ShortId = ?', (short_id,))
+        db.commit()
     print(f"Row with ShortId {short_id} has been deleted.")
 def update_row(short_id, column, new_value):
     print(short_id, column, new_value)
@@ -223,25 +193,6 @@ def add_issue():
     else:
     # For GET requests, show the form
         return render_template('add_issue.html')
-
-##@app.route('/delete_issue')
-##def delete_issue():
-##    all_rows = fetch_data()
-##    headers = get_headers()
-##    if not all_rows:
-##        print("There are no issues left to delete, try adding some")
-##        return
-##    line_count = 0
-##    for row in all_rows:
-##        print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
-##and was classed as {headers[2]} {row[2]}.''')
-##        print(f'''Ticket {headers[3]} is {row[3]} \
-##and is assigned to group {row[4]} with ID {row[5]}.''')
-##        print(f'Ticket was created {row[6]} and was last updated on {row[7]}.')
-##        status= "Open" if row[8]=="TRUE" else "Closed"
-##        print(f'The ticket is {status} the {headers[9]} identified is {row[9]}')
-##        delete=yes_no(f'Delete this ticket {row[0]}?')
-##        delete_row(row[0]) if delete else None
 @app.route('/delete_issue', methods=['GET', 'POST'])
 def delete_issue():
     error=request.args.get('error')
@@ -260,30 +211,6 @@ def delete_issue():
     all_rows = fetch_data()
     headers = get_headers()
     return render_template('delete_issue.html', all_rows=all_rows, headers=headers,error=error)
-
-##@app.route('/resolve_issue')
-##def resolve_issue():
-##    all_rows = fetch_data()
-##    headers = get_headers()
-##    if not all_rows:
-##        print("There are no issues to resolve, please add some")
-##        return
-##    line_count = 0
-##    for row in all_rows:
-##        if row[8]=="TRUE":
-##            print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
-##and was classed as {headers[2]} {row[2]}.''')
-##            print(f'''Ticket {headers[3]} is {row[3]} \
-##and is assigned to group {row[4]} with ID {row[5]}.''')
-##            print(f'Ticket was created {row[6]} and was last updated on {row[7]}.')
-##            resolve=yes_no(f'Resolve this ticket')
-##            if resolve:
-##                update_row(row[0], '''"Issue open"''', "FALSE")
-##                update_row(row[0], "LastUpdatedDate",current_datetime())
-##                rootcause=yes_no("Do we know what the root cause is/Do we need to update the root cause?")
-##                if rootcause:
-##                    update_row(row[0], '''"Root cause"''', input("What was the root cause:\t"))
-##
 @app.route('/resolve_issue', methods=['GET', 'POST'])
 def resolve_issue():
     if 'user_id' not in session:
