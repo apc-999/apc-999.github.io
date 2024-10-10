@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="../resources/style.css">
+</head>
+
+<body>
+    {% extends 'base.html' %}
+
+    {% block title %}
+    Admin Dashboard
+    {% endblock %}
+
+    {% block content %}
+    <h1>Admin Dashboard</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Username</th>
+                <th>Reset Password</th>
+                <th>Role</th>
+                <th>Profile Image</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('admin') }}">
+                    <!-- Ensure action is correct -->
+                    <td><input type="number" name="user_id" value="{{ user[0] }}" readonly></td>
+                    <td><input type="text" name="username" value="{{ user[1] }}" required></td>
+                    <td><button type="submit" name="reset_password">Reset Password</button></td>
+                    <td>
+                        <select name="role" required>
+                            <option value="user" {% if user[3]=='user' %}selected{% endif %}>User</option>
+                            <option value="admin" {% if user[3]=='admin' %}selected{% endif %}>Admin</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button type="submit" name="reset_image">Remove</button>
+                        <input type="file" name="profile_image" accept="image/*">
+
+
+
+                    </td>
+                    <td>
+                        <button type="submit">Update</button>
+                    </td>
+                </form>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endblock %}
+</body>
+
+</html>

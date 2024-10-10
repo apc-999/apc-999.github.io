@@ -4,38 +4,67 @@ import datetime
 import sys
 import dateutil.parser
 from tkinter import messagebox as mb
-from flask import Flask, render_template, redirect, url_for, g, request, render_template_string
+from flask import Flask, render_template, redirect, url_for, g, request, render_template_string, session, flash
 from tkinter import Tk, PhotoImage
+from werkzeug.utils import secure_filename
+import hashlib
 app = Flask(__name__, template_folder='../templates', static_folder='../resources')
+app.secret_key = 'QAsucks'
+app.config['UPLOAD_FOLDER'] = '../resources/static/images'
+
+if not os.path.exists(app.config['UPLOAD_FOLDER'] ):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
 resources=os.path.join(app.root_path, os.pardir)+"/resources/"
 print(resources)
 db_path = resources+"data.db"
-if not os.path.isfile(db_path):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS data (
-        ShortId TEXT,
-        Title TEXT,
-        Severity TEXT,
-        Status TEXT,
-        AssignedGroup TEXT,
-        AssigneeIdentity TEXT,
-        CreateDate TEXT,
-        LastUpdatedDate TEXT,
-        "Issue open" BOOLEAN,
-        "Root cause" TEXT
-    )
-    ''')
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS data (
+    ShortId TEXT,
+    Title TEXT,
+    Severity TEXT,
+    Status TEXT,
+    AssignedGroup TEXT,
+    AssigneeIdentity TEXT,
+    CreateDate TEXT,
+    LastUpdatedDate TEXT,
+    "Issue open" BOOLEAN,
+    "Root cause" TEXT
+)
+''')
+cursor.execute('''CREATE TABLE IF NOT EXISTS "users" (
+	"id"	INTEGER NOT NULL,
+	"username"	TEXT NOT NULL UNIQUE,
+	"password"	TEXT NOT NULL,
+	"role"	TEXT NOT NULL DEFAULT 'user',
+	"profile-img"	TEXT NOT NULL DEFAULT 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+	PRIMARY KEY("id" AUTOINCREMENT)
+)''')
+conn.commit()
+conn.close()
+
+# Password hashing
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(db_path)
         g.db.row_factory = sqlite3.Row
     return g.db
+def get_user_info(user_id,return_info):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+    result = cursor.fetchone()
+    return result[return_info] if result else None
+app.jinja_env.globals.update(get_user_info=get_user_info)
 def getDateTimeFromISO8601String(s):
     d = dateutil.parser.parse(s)
     return d
-def error_message(page,error=None):
+def error_message(error=None):
     msg = "ERROR!!!!!!!"
     if error:
         msg += "\n" + error
@@ -76,6 +105,7 @@ def insert_data(row):
     INSERT INTO data (ShortId, Title, Severity, Status, AssignedGroup, AssigneeIdentity, CreateDate, LastUpdatedDate, "Issue open", "Root cause")
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', row)
     db.commit()
+    db.close()
 def fetch_data():
     db = get_db()
     cursor = db.cursor()
@@ -93,91 +123,33 @@ def delete_row(short_id):
     cursor = db.cursor()
     cursor.execute('DELETE FROM data WHERE ShortId = ?', (short_id,))
     db.commit()
+    db.close()
     print(f"Row with ShortId {short_id} has been deleted.")
 def update_row(short_id, column, new_value):
     print(short_id, column, new_value)
-    db = get_db()
-    cursor = db.cursor()
-    query = f'''UPDATE data SET "{column}" = ? WHERE ShortId = ?'''
-    print(query)
-    cursor.execute(query, (new_value, short_id))
-    db.commit()
+    with get_db() as db:
+        cursor = db.cursor()
+        query = f'''UPDATE data SET "{column}" = ? WHERE ShortId = ?'''
+        print(query)
+        cursor.execute(query, (new_value, short_id))
+        db.commit()
     print(f"Ticket ShortId {short_id} has been updated.")
 def current_datetime():
     return datetime.datetime.utcnow().isoformat()+"Z"
 @app.route('/show_issues')
 def show_issues():
+    error=request.args.get('error')
     all_rows = fetch_data()
     headers = get_headers()
     if not all_rows:
         return "There are no issues currently, please add some."
 
-    return render_template('show_issues.html', headers=headers, issues=all_rows)
-##@app.route('/add_issue')
-##def add_issue():
-##    rowtowrite=[]
-##   
-##    headers=get_headers()
-##    for header in headers:
-##        if "Date" in header:
-##            if header=="LastUpdatedDate":
-##                writer=current_datetime()
-##            else:
-##                try:
-##                    date=input(f'{header}:\t')
-##                    date=current_datetime() if date=="now" else date
-##                    writer=getDateTimeFromISO8601String(date).replace(tzinfo=None).isoformat()+"Z"
-##                except:
-##                    error = error_message(error="That is not a valid date, Please use the ISO8601 UTC format")
-##                    main()
-##                    exit()
-##        elif header=="Severity":
-##            try:
-##                writer=float(input(f'{header}:\t'))
-##                if 1<=writer<=5:
-##                    if writer != 2.5:
-##                        writer=int(writer)
-##                else:
-##                    raise ValueError
-##            except:
-##                error = error_message(error="Severity must be a SEV number between 1-5\nHint: Make sure to just enter only the number (after SEV)")
-##                add_issue()
-##                return
-##        elif "Short" in header:
-##            writer=input(f'{header}:\t')[0:10]
-##        elif header=="Issue open":
-##            writer=str(yes_no("Is the issue open?")).upper()
-##        elif header=="Status":
-##            statuses=["Assigned","Researching","Work in Progress", "Resolved"]
-##            writer=input(f'{header}:\t').capitalize()
-##            try:
-##                found = [ans for ans in statuses if ans.startswith(writer[0])]
-##            except:
-##                found=None
-##            if not found:
-##                error = error_message(error=f'Status must be any one of the following: {statuses}')
-##                add_issue()
-##                return
-##            else:
-##                if len(found)>1:
-##                    found = [ans for ans in statuses if ans.startswith(writer[0:4])]
-##                    if not found or len(found)>1:
-##                        error = error_message(error=f'Status must be any one of the following: {statuses}\nHint: Must contain at least the 4 starting letters')
-##                        main()
-##                        exit()
-##                writer=found[0]
-##        else:
-##            writer=input(f'{header}:\t')
-##        if writer == "":
-##            error = error_message(error="Field must not be left blank")
-##            add_issue()
-##            exit()
-##        rowtowrite.append(writer)
-##    insert_data(rowtowrite)
-
+    return render_template('show_issues.html', error=error, headers=headers, issues=all_rows)
 @app.route('/add_issue', methods=['GET', 'POST'])
 def add_issue():
-    error=None
+    error=request.args.get('error')
+    if 'user_id' not in session:
+        return redirect(url_for('show_issues'))
     if request.method == 'POST':
         rowtowrite = []
         headers = get_headers()
@@ -190,13 +162,13 @@ def add_issue():
                     value=current_datetime()
                 elif not value:
                     print("there's an error at Date")
-                    error = error_message("add_issue.html",error=f'{header} is required.')
+                    error = error_message(error=f'{header} is required.')
                     break
                 try:
                     value = getDateTimeFromISO8601String(value).replace(tzinfo=None).isoformat()+"Z"
                 except:
                     print("there's an error at ISO Date")
-                    error = error_message("add_issue.html",error="Please enter a valid date in ISO8601 format.")
+                    error = error_message(error="Please enter a valid date in ISO8601 format.")
                     break
                 rowtowrite.append(value)
                 
@@ -209,7 +181,7 @@ def add_issue():
                         raise ValueError
                 except:
                     print("there's an error at sev")
-                    error = error_message("add_issue.html",error="Severity must be a SEV number between 1-5")
+                    error = error_message(error="Severity must be a SEV number between 1-5")
                     failed=True
                     break
                 rowtowrite.append(value)
@@ -223,21 +195,21 @@ def add_issue():
                 valid_statuses = ["Assigned", "Researching", "Work in Progress", "Resolved"]
                 if value not in valid_statuses:
                     print("there's an error at status")
-                    error = error_message("add_issue.html",error=f'Status must be one of {valid_statuses}')
+                    error = error_message(error=f'Status must be one of {valid_statuses}')
                     failed=True
                     break
                 rowtowrite.append(value)
             elif header == 'Root cause':
                 print(rowtowrite[-1])
                 if not value and str(rowtowrite[-1]).upper() == "FALSE":  # Check if the issue is open
-                    error = error_message("add_issue.html", error=f'Root Cause is required if the issue is open.')
+                    error = error_message( error=f'Root Cause is required if the issue is open.')
                     break
                 rowtowrite.append(value)  # Append even if it's empty
             else:
                 print(header,value)
                 if not value:
                     print("there's an error at not value")
-                    error = error_message("add_issue.html",error=f'{header} is required.')
+                    error = error_message(error=f'{header} is required.')
                     break
                 rowtowrite.append(value)
 
@@ -272,6 +244,11 @@ def add_issue():
 ##        delete_row(row[0]) if delete else None
 @app.route('/delete_issue', methods=['GET', 'POST'])
 def delete_issue():
+    error=request.args.get('error')
+    if 'user_id' not in session:
+        return redirect(url_for('show_issues'))
+    elif get_user_info(session['user_id'],3) != "admin":
+        return redirect(url_for('show_issues',error=error_message("Must be an admin to access that page")))
     if request.method == 'POST':
         # Get the ticket ID from the form submission
         ticket_id = request.form.get('ticket_id')
@@ -282,7 +259,7 @@ def delete_issue():
     # For GET requests, display all rows
     all_rows = fetch_data()
     headers = get_headers()
-    return render_template('delete_issue.html', all_rows=all_rows, headers=headers)
+    return render_template('delete_issue.html', all_rows=all_rows, headers=headers,error=error)
 
 ##@app.route('/resolve_issue')
 ##def resolve_issue():
@@ -309,6 +286,9 @@ def delete_issue():
 ##
 @app.route('/resolve_issue', methods=['GET', 'POST'])
 def resolve_issue():
+    if 'user_id' not in session:
+        return redirect(url_for('show_issues'))
+    error=request.args.get('error')
     all_rows = fetch_data()
     headers = get_headers()
 
@@ -342,77 +322,17 @@ def resolve_issue():
 
     if not unresolved_issues:
         print("There are no issues to resolve, please add some.")
-        return render_template('resolve_issue.html', error=error_message("No issues to resolve."))
+        error=error_message("No issues to resolve.")
 
-    return render_template('resolve_issue.html', unresolved_issues=unresolved_issues, all_rows=all_rows, headers=headers, current_root_cause=current_root_cause)
-
-##@app.route('/update_issue')
-##def update_issue():
-##    all_rows = fetch_data()
-##    headers = get_headers()
-##    if not all_rows:
-##        print("There are no issues to update, maybe add some")
-##        return
-##    line_count = 0
-##    for row in all_rows:
-##            print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
-##and was classed as {headers[2]} {row[2]}.''')
-##            wantto=yes_no(f'Do You want to update this issue {row[0]}')
-##            if wantto:
-##                for column in range(len(row)):
-##                    if headers[column]=="LastUpdatedDate":
-##                        changeto=current_datetime()
-##                    elif headers[column]!="Issue open":
-##                        changeit=yes_no(f'Do You want to change {headers[column]} it is currently {row[column]}')
-##                        if changeit:
-##                            if "Date" in headers[column]:
-##                                try:
-##                                    changeto=getDateTimeFromISO8601String(input(f'{headers[column]}:\t')).replace(tzinfo=None).isoformat()+"Z"
-##                                except:
-##                                    error = error_message("update_issue.html",error="That is not a valid date, Please use the ISO8601 UTC format")
-##                                    main()
-##                                    exit()
-##                            elif headers[column]=="Severity5":
-##                                try:
-##                                    changeto=float(input(f'{headers[column]}:\t'))
-##                                    if 1<=changeto<=5:
-##                                        if changeto != 2.5:
-##                                            changeto=int(changeto)
-##                                    else:
-##                                        raise ValueError
-##                                except:
-##                                    error = error_message("update_issue.html",error="Severity must be a SEV number between 1-5\nHint: Make sure to just enter only the number (after SEV)")
-##                                    update_issue(CSV)
-##                                    return
-##                            elif "Short" in headers[column]:
-##                                changeto=input(f'{headers[column]}:\t')[0:10]
-##                            elif headers[column]=="Status":
-##                                statuses=["Assigned","Researching","Work in Progress", "Resolved"]
-##                                changeto=input(f'{headers[column]}:\t').capitalize()
-##                                found = [ans for ans in statuses if ans.startswith(changeto[0])]
-##                                if not found:
-##                                    error = error_message("update_issue.html",error=f'Status must be any one of the following: {statuses}')
-##                                    update_issue(CSV)
-##                                    return
-##                                else:
-##                                    if len(found)>1:
-##                                        found = [ans for ans in statuses if ans.startswith(changeto[0:4])]
-##                                        if not found or len(found)>1:
-##                                            error = error_message("update_issue.html",error=f'Status must be any one of the following: {statuses}\nHint: Must contain at least the 4 starting letters')
-##                                            main()
-##                                            exit()
-##                                    changeto=found[0]
-##                            else:
-##                                changeto=input(f'{headers[column]}:\t')
-##                            if changeto == "":
-##                                error = error_message("update_issue.html",error="Field must not be left blank")
-##                                update_issue()
-##                                return
-##                            update_row(row[0],headers[column],changeto)
-
+    return render_template('resolve_issue.html', error=error,unresolved_issues=unresolved_issues, all_rows=all_rows, headers=headers, current_root_cause=current_root_cause)
 
 @app.route('/update_issue', methods=['GET', 'POST'])
 def update_issue():
+    if 'user_id' not in session:
+        return redirect(url_for('show_issues'))
+    elif get_user_info(session['user_id'],3) != "admin":
+        return redirect(url_for('show_issues',error=error_message("Must be an admin to access that page")))
+    
     db = get_db()
     cursor = db.cursor()
     ticket_id = request.args.get('ticket_id')  # Get the ticket ID from the URL
@@ -459,39 +379,10 @@ def update_issue():
         return render_template('update_issue.html', issue=issue, headers=headers)
 
 
-
-##@app.route('/find_issue')
-##def find_issue():
-##                            db = get_db()
-##    cursor = db.cursor()
-##    issue=input("Search:\t")
-##    query = f'''SELECT * FROM data WHERE ShortId LIKE ? OR Title LIKE ? OR Severity LIKE ? OR Status LIKE ? OR AssignedGroup LIKE ? OR AssigneeIdentity LIKE ? OR "Root cause" LIKE ?'''
-##    search_term = f"%{issue}%"
-##    cursor.execute(query, (search_term, search_term, search_term, search_term, search_term, search_term, search_term))
-##    matching_rows = cursor.fetchall()
-##    headers = get_headers()
-##    if not matching_rows:
-##        print("No issues found matching that search, check Your input and try again.")
-##        return
-##    line_count = 0
-##    for row in matching_rows:    
-##            print(f'''{headers[0]} {row[0]} is issue: {row[1]}, \
-##and was classed as {headers[2]} {row[2]}.''')
-##            print(f'''Ticket {headers[3]} is {row[3]} \
-##and is assigned to group {row[4]} with ID {row[5]}.''')
-##            print(f'Ticket was created {row[6]} and was last updated on {row[7]}.')
-##            status= "Open" if row[8]=="TRUE" else "Closed"
-##            print(f'The ticket is {status} the {headers[9]} identified is {row[9]}')
-##            line_count += 1
-##            try:
-##                if row[10]:
-##                    print(f"Additional information includes: {row[10:]}")
-##            except:
-##                continue
-##    print(f'Processed {line_count} lines.')
-
 @app.route('/find_issue', methods=['GET', 'POST'])
 def find_issue():
+    if 'user_id' not in session:
+        return redirect(url_for('show_issues'))
     db = get_db()
     cursor = db.cursor()
     headers = get_headers()  # Assumes you have a function to get column headers
@@ -512,10 +403,137 @@ def find_issue():
 
     return render_template('find_issue.html', headers=headers, matching_rows=matching_rows)
 
+# Sign-up route
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    error=request.args.get('error')
+    if 'user_id' in session:
+        return redirect(url_for('menu'))
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Hash the password
+        hashed_password = hash_password(password)
+        
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+            db.commit()
+            db.close()
+            flash('Sign-up successful! You can now log in.', 'success')
+            return redirect(url_for('login'))
+        except sqlite3.IntegrityError:
+            error=error_message('Username already exists. Please choose a different one.')
+    
+    return render_template('signup.html',error=error)
+
+# Login route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error=request.args.get('error')
+    if 'user_id' in session:
+        return redirect(url_for('menu'))
+    if request.method == 'POST':
+        username = request.form['username']
+        password = hash_password(request.form['password'])
+        
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM users WHERE username = ? AND (password = ? OR password = "default_password")', (username, password))
+        user = cursor.fetchone()
+        db.close()
+        if user:
+            if user[2]=="default_password":
+                error = "Your password has been reset. Please create a new password."
+                session['user_id'] = user[0]
+                return redirect(url_for('change_password'))
+
+            session['user_id'] = user[0]
+            return redirect(url_for('menu'))
+        else:
+            error=error_message('Invalid username or password.')
+    
+    return render_template('login.html',error=error)
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))  # Ensure only logged-in users can access this
+
+    user_id = session['user_id']
+
+    if request.method == 'POST':
+        new_password = hash_password(request.form['new_password'])
+
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('UPDATE users SET password = ? WHERE id = ?', 
+                       (new_password, user_id))
+        db.commit()
+        db.close()
+
+        return redirect(url_for('menu'))  # Redirect to the main menu after changing password
+
+    return render_template('change_password.html')  # Render a template for changing the password
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    error=request.args.get('error')
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    elif get_user_info(session['user_id'],3) != "admin":
+        return redirect(url_for('show_issues',error=error_message("Must be an admin to access that page")))
+    db = get_db()
+    cursor = db.cursor()
+    
+    if request.method == 'POST':
+        user_id = request.form.get('user_id')
+        username = request.form.get('username')
+        role = request.form.get('role')
+        profile_image=request.files.get('profile_image')
+        if 'reset_password' in request.form:
+            cursor.execute('UPDATE users SET password = ? WHERE id = ?', ('default_password', user_id))
+        elif 'reset_image' in request.form:
+            cursor.execute('UPDATE users SET "profile-img" = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" WHERE id = ?', (user_id))
+        else:
+            if profile_image:
+                print("yes")
+                # Save the profile image and update the path in the database
+                filename = secure_filename(profile_image.filename)
+                full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                profile_image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                cursor.execute('UPDATE users SET username = ?, role = ?, "profile-img" = ? WHERE id = ?',
+                               (username, role, full_path, user_id))
+            else:
+                cursor.execute('UPDATE users SET username = ?, role = ? WHERE id = ?',
+                               (username, role, user_id))
+
+        db.commit()
+        db.close()
+        return redirect(url_for('admin', error="Success"))
+
+    # Fetch all users for display
+    cursor.execute('SELECT * FROM users')
+    users = cursor.fetchall()
+    
+    return render_template('admin.html', users=users, error=error)
 
 @app.route('/')
 def menu():
-    return render_template('menu.html')
+    if 'user_id' not in session:
+        return redirect(url_for('show_issues'))
+    return render_template('menu.html',role=get_user_info(session.get('user_id'),3))
+# Logout route
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    session.pop('role', None)
+    session.pop('user_id', None)
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True, use_reloader=False)
+
+
