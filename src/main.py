@@ -12,7 +12,7 @@ app = Flask(__name__, template_folder='../templates', static_folder='../resource
 app.secret_key = 'QAsucks'
 
 resources=os.path.join(app.root_path, os.pardir)+"/resources/"
-app.config['UPLOAD_FOLDER'] = resources+'/static/images'
+app.config['UPLOAD_FOLDER'] = resources+'static/images'
 
 if not os.path.exists(app.config['UPLOAD_FOLDER'] ):
     os.makedirs(app.config['UPLOAD_FOLDER'])
