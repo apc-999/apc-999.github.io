@@ -434,7 +434,7 @@ def admin():
         if 'reset_password' in request.form:
             cursor.execute('UPDATE users SET password = ? WHERE id = ?', ('default_password', user_id))
         elif 'reset_image' in request.form:
-            cursor.execute('UPDATE users SET "profile-img" = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" WHERE id = ?', (user_id))
+            cursor.execute('UPDATE users SET "profile-img" = "https://media0.giphy.com/media/l0HlNRowezfsJcFSo/200w.gif" WHERE id = ?', (user_id))
         else:
             if profile_image:
                 filename = secure_filename(profile_image.filename)
