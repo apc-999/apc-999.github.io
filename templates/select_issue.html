@@ -14,6 +14,12 @@
 </head>
 
 <body>
+    {% extends 'base.html' %}
+
+    {% block title %}
+    Update Issue
+    {% endblock %}
+    {% block content %}
     <h1>Select an Issue to Update</h1>
 
     {% if issues %}
@@ -29,6 +35,11 @@
     {% else %}
     <p>No issues found.</p>
     {% endif %}
+    <!-- Return to Main Menu -->
+    <div class="button-container">
+        <a href="{{ url_for('menu') }}" class="main-menu-button">Return to Main Menu</a>
+    </div>
+    {% endblock %}
 </body>
 
 </html>
