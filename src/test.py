@@ -1,106 +1,182 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+import unittest
 import sqlite3
-import hashlib
+import os
+import shutil
+import json
+from main import get_db, insert_data, fetch_data, delete_row, update_row, hash_password, get_user_info, db_path
+from main import app
 
-app = Flask(__name__, template_folder='../templates', static_folder='../resources')
-app.secret_key = 'your_secret_key'  # Replace with a secure key
+class TestFlaskAppDatabase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Called once before all tests"""
+        if os.path.exists(db_path):
+            shutil.copyfile(db_path, f"{db_path}.old")
 
-# Database setup
-def init_db():
-    conn = sqlite3.connect('data.db')
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        username TEXT UNIQUE NOT NULL,
-                        password TEXT NOT NULL,
-                        role TEXT DEFAULT 'user'
-                    )''')
-    conn.commit()
-    conn.close()
+    @classmethod
+    def tearDownClass(cls):
+        """Called once after all tests"""
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        if os.path.exists(f"{db_path}.old"):
+            shutil.move(f"{db_path}.old", db_path)
+            
+    def setUp(self):
+        self.app_context = app.app_context()
+        self.app_context.push()
 
-# Password hashing
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+        self.client = app.test_client()
+        self.conn = get_db()
+        self.cursor = self.conn.cursor()
 
-# Check if user exists
-def get_user(username):
-    conn = sqlite3.connect('data.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
-    conn.close()
-    return user
+    def tearDown(self):
+        self.app_context.pop()
+        self.conn.close()
 
-# Sign-up route
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+    def test_insert_data(self):
+        """Test inserting a new row into the data table"""
+        row = ("TEST01", "Test Title", "2.5", "Assigned", "TestGroup", "TestIdentity", 
+               "2023-10-09T12:00:00Z", "2023-10-09T12:00:00Z", "TRUE", "Test Root Cause")
+        insert_data(row)
+        data = fetch_data()
+        data_as_tuples = [tuple(d) for d in data]
+        self.assertIn(row, data_as_tuples)
+
+    def test_update_row(self):
+        """Test updating an existing row in the data table"""
+        row = ("TEST02", "Test Title", "3", "Assigned", "TestGroup", "TestIdentity", 
+               "2023-10-09T12:00:00Z", "2023-10-09T12:00:00Z", "TRUE", "Test Root Cause")
+        insert_data(row)
+
+        update_row("TEST02", "Title", "Updated Title")
+        row = ("TEST02", "Updated Title", "3", "Assigned", "TestGroup", "TestIdentity", 
+               "2023-10-09T12:00:00Z", "2023-10-09T12:00:00Z", "TRUE", "Test Root Cause")
+
+        data = fetch_data()
+        data_as_tuples = [tuple(d) for d in data]
+        self.assertIn(row, data_as_tuples)
+
+    def test_delete_row(self):
+        """Test deleting a row from the data table"""
+        row = ("TEST03", "Test Title", "3", "Assigned", "TestGroup", "TestIdentity", 
+               "2023-10-09T12:00:00Z", "2023-10-09T12:00:00Z", "TRUE", "Test Root Cause")
+        insert_data(row)
+
+        delete_row("TEST03")
+
+        data = fetch_data() 
+        data_as_tuples = [tuple(d) for d in data]
+        self.assertNotIn(row, data_as_tuples)
+
+    def test_fetch_data(self):
+        """Test fetching all data rows"""
+        row = ("TEST04", "Test Title", "3", "Assigned", "TestGroup", "TestIdentity", 
+               "2023-10-09T12:00:00Z", "2023-10-09T12:00:00Z", "TRUE", "Test Root Cause")
+        insert_data(row)
+
+        all_data = fetch_data()
+        self.assertGreater(len(all_data), 0, "No data fetched from the table")
+
+    def test_hash_password(self):
+        """Test password hashing"""
+        password = "password123"
+        hashed = hash_password(password)
+        self.assertEqual(len(hashed), 64, "Hash length is incorrect")
+        self.assertNotEqual(hashed, password, "Hashed password should not match the original")
+
+    def test_get_user_info(self):
+        """Test retrieving user information from the users table"""
+        username = "test_user"
+        password = hash_password("test_password")
+        self.cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        self.conn.commit()
+
+        user_id = self.cursor.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()[0]
+
+        result = get_user_info(user_id, 1)
+        self.assertEqual(result, "test_user", "Failed to fetch the correct username")
         
-        # Hash the password
-        hashed_password = hash_password(password)
+    def test_user_role_permissions(self):
+        """Test that admin and regular users have different permissions"""
+        # Create a regular user
+        self.cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
+                           ("regular_user", hash_password("password"), "user"))
         
-        conn = sqlite3.connect('data.db')
-        cursor = conn.cursor()
-        try:
-            cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
-            conn.commit()
-            flash('Sign-up successful! You can now log in.', 'success')
-            return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
-            flash('Username already exists. Please choose a different one.', 'error')
-        finally:
-            conn.close()
-    
-    return render_template('signup.html')
-
-# Login route
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = hash_password(request.form['password'])
+        # Create an admin user
+        self.cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
+                           ("admin_user", hash_password("password"), "admin"))
+        self.conn.commit()
         
-        conn = sqlite3.connect('data.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
-        user = cursor.fetchone()
-
-        if user:
-            session['user_id'] = user[0]
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid username or password.', 'error')
-    
-    return render_template('login.html')
-def get_user_info(user_id,return_info):
-    conn = sqlite3.connect('data.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
-    result = cursor.fetchone()
-    return result[return_info] if result else None
-
-# Dashboard route
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' in session:
-        print(get_user_info(session['user_id'],1),get_user_info(session['user_id'],3))
-        return f"Welcome {get_user_info(session['user_id'],1)}! You are logged in as {get_user_info(session['user_id'],3)}."
-    return redirect(url_for('login'))
-
-@app.route('/')
-def menu():
-    return render_template('menu.html')
-# Logout route
-@app.route('/logout')
-def logout():
-    session.pop('username', None)
-    session.pop('role', None)
-    session.pop('user_id', None)
-    flash('You have been logged out.', 'success')
-    return redirect(url_for('login'))
+        # Test regular user access to admin-only route
+        with self.client as c:
+            with c.session_transaction() as sess:
+                user_id = self.cursor.execute("SELECT id FROM users WHERE username = ?", 
+                                             ("regular_user",)).fetchone()[0]
+                sess['user_id'] = user_id
+                
+            response = c.get('/update_issue')
+            self.assertIn(b"Must be an admin", response.data)
+            
+        # Test admin user access to admin-only route
+        with self.client as c:
+            with c.session_transaction() as sess:
+                user_id = self.cursor.execute("SELECT id FROM users WHERE username = ?", 
+                                             ("admin_user",)).fetchone()[0]
+                sess['user_id'] = user_id
+                
+            response = c.get('/update_issue')
+            self.assertNotIn(b"Must be an admin", response.data)
+            
+    def test_validation_rules(self):
+        """Test that validation rules are enforced"""
+        # Test invalid severity value
+        with self.client as c:
+            with c.session_transaction() as sess:
+                user_id = self.cursor.execute("SELECT id FROM users WHERE username = ?", 
+                                             ("admin_user",)).fetchone()[0]
+                sess['user_id'] = user_id
+                
+            response = c.post('/add_issue', data={
+                'ShortId': 'TEST-INV',
+                'Title': 'Invalid Test',
+                'Severity': '10',  # Invalid severity (should be 1-5)
+                'Status': 'Assigned',
+                'AssignedGroup': 'Test Group',
+                'AssigneeIdentity': 'Test User',
+                'CreateDate': '2023-10-09',
+                'Issue open': 'on'
+            })
+            self.assertIn(b"Severity must be", response.data)
+            
+    def test_api_endpoints(self):
+        """Test API endpoints for CRUD operations"""
+        # Test adding an issue
+        with self.client as c:
+            with c.session_transaction() as sess:
+                user_id = self.cursor.execute("SELECT id FROM users WHERE username = ?", 
+                                             ("admin_user",)).fetchone()[0]
+                sess['user_id'] = user_id
+                
+            # Add an issue
+            response = c.post('/add_issue', data={
+                'ShortId': 'API-TEST',
+                'Title': 'API Test Issue',
+                'Severity': '3',
+                'Status': 'Assigned',
+                'AssignedGroup': 'API Group',
+                'AssigneeIdentity': 'API User',
+                'CreateDate': '2023-10-09',
+                'Issue open': 'on'
+            }, follow_redirects=True)
+            
+            # Verify the issue was added
+            self.assertIn(b"API Test Issue", response.data)
+            
+            # Test finding the issue
+            response = c.post('/find_issue', data={
+                'search_term': 'API-TEST'
+            })
+            self.assertIn(b"API Test Issue", response.data)
 
 if __name__ == '__main__':
-    init_db()  # Ensure the users table exists
-    app.run()
+    unittest.main()
