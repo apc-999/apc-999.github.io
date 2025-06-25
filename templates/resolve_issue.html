@@ -1,77 +1,80 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resolve Issues</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
+{% block title %}
+Resolve Issues
+{% endblock %}
 
-<body>
-    {% extends 'base.html' %}
-
-    {% block title %}
-    Add a New Issue
-    {% endblock %}
-
-    {% block content %}
-    <div class="container">
-        <h1>Resolve Issues</h1>
-        <table class="table">
-            <thead>
-                <tr>
-                    {% for header in headers %}
-                    <th>{{ header }}</th>
-                    {% endfor %}
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in unresolved_issues %}
-                <tr>
-                    {% for value in row %}
-                    <td>{{ value }}</td>
-                    {% endfor %}
-                    <td>
-                        <form method="post" style="display:inline;">
-                            <input type="hidden" name="ticket_id" value="{{ row[0] }}">
-                            <div>
-                                <label for="root_cause">Root Cause:</label>
-                                <input type="text" name="root_cause" id="root_cause"
-                                    value="{{ current_root_cause if current_root_cause else '' }}"
-                                    placeholder="(Optional) New root cause">
-                            </div>
-                            <button type="submit" class="btn btn-danger">Resolve</button>
-                        </form>
-                        <script>
-                            // Check if the root cause input should be required
-                            document.addEventListener("DOMContentLoaded", function () {
-                                const rootCauseInput = document.getElementById("root_cause");
-
-                                // If current_root_cause is empty, set required to true
-                                if (!rootCauseInput.value) {
-                                    rootCauseInput.setAttribute("required", "required");
-                                } else {
-                                    rootCauseInput.removeAttribute("required");
-                                }
-                            });
-                        </script>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% if error %}
-        <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Resolve Issues</h1>
+    
+    {% if unresolved_issues %}
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <i class="fas fa-exclamation-triangle me-2"></i> Open Issues
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Severity</th>
+                            <th>Status</th>
+                            <th>Assigned Group</th>
+                            <th>Assignee</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in unresolved_issues %}
+                        <tr>
+                            <td>{{ row[0] }}</td>
+                            <td>{{ row[1] }}</td>
+                            <td>{{ row[2] }}</td>
+                            <td>{{ row[3] }}</td>
+                            <td>{{ row[4] }}</td>
+                            <td>{{ row[5] }}</td>
+                            <td>
+                                <form method="post" class="row g-3">
+                                    <input type="hidden" name="ticket_id" value="{{ row[0] }}">
+                                    <div class="col-12">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                            <input type="text" class="form-control" name="root_cause" id="root_cause_{{ row[0] }}"
+                                                value="{{ current_root_cause if current_root_cause else '' }}"
+                                                placeholder="Root cause" required>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-check-circle me-1"></i> Resolve
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-
-    <!-- Return to Main Menu -->
-    <div class="button-container">
-        <a href="{{ url_for('menu') }}" class=" main-menu-button">Return to Main Menu</a>
+    {% else %}
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle me-2"></i> All issues have been resolved!
     </div>
-    {% endblock %}
-</body>
-
-</html>
+    {% endif %}
+    
+    {% if error %}
+    <div class="alert alert-danger mt-3">
+        <i class="fas fa-exclamation-circle me-2"></i> {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+        <a href="{{ url_for('menu') }}" class="btn btn-primary">
+            <i class="fas fa-home me-1"></i> Return to Main Menu
+        </a>
+    </div>
+</div>
+{% endblock %}

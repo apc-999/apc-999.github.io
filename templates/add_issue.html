@@ -1,82 +1,106 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../resources/style.css">
-    <title>Add Issue</title>
-</head>
+{% block title %}
+Add a New Issue
+{% endblock %}
 
-<body>
-    {% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Add New Issue</h1>
+    
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            Create New Issue
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/add_issue">
+                <div class="row">
+                    <!-- ShortId -->
+                    <div class="col-md-6 mb-3">
+                        <label for="ShortId" class="form-label">Short ID:</label>
+                        <input type="text" class="form-control" id="ShortId" name="ShortId" maxlength="10" required
+                               placeholder="e.g., ISSUE-123">
+                        <div class="form-text">Unique identifier for this issue</div>
+                    </div>
 
-    {% block title %}
-    Add a New Issue
-    {% endblock %}
-
-    {% block content %}
-    <h1>Add New Issue</h1>
-    <form method="POST" action="/add_issue">
-        <!-- ShortId -->
-        <label for="ShortId">Short ID:</label>
-        <input type="text" id="ShortId" name="ShortId" maxlength="10" required><br><br>
-
-        <!-- Title -->
-        <label for="Title">Title:</label>
-        <input type="text" id="Title" name="Title" required><br><br>
-
-        <!-- Severity -->
-        <label for="Severity">Severity:</label>
-        <select id="Severity" name="Severity" required>
-            <option value="">Select Severity</option>
-            <option value="1">1 - Customer facing function down</option>
-            <option value="2">2 - Customer facing function impaired</option>
-            <option value="2.5">2.5 - [Business hours] Customer facing function impared</option>
-            <option value="3">3 - Group productivity impaired</option>
-            <option value="4">4 - Individual productivity impaired</option>
-            <option value="5">5 - Productivity not impared</option>
-        </select><br><br>
-
-        <!-- Status -->
-        <label for="Status">Status:</label>
-        <select id="Status" name="Status" required>
-            <option value="">Select Status</option>
-            <option value="Assigned">Assigned</option>
-            <option value="Researching">Researching</option>
-            <option value="Work in Progress">Work in Progress</option>
-            <option value="Resolved">Resolved</option>
-        </select><br><br>
-
-        <!-- Assigned Group -->
-        <label for="AssignedGroup">Assigned Group:</label>
-        <input type="text" id="AssignedGroup" name="AssignedGroup" required><br><br>
-
-        <!-- Assignee Identity -->
-        <label for="AssigneeIdentity">Assignee Identity:</label>
-        <input type="text" id="AssigneeIdentity" name="AssigneeIdentity" required><br><br>
-
-        <!-- Create Date -->
-        <label for="CreateDate">Create Date:</label>
-        <input type="date" id="CreateDate" name="CreateDate" required><br><br>
-
-        <!-- Issue Open -->
-        <label for="Issue open">Is the issue open?</label>
-        <input type="checkbox" id="Issue open" name="Issue open"><br><br>
-
-        <!-- Root Cause -->
-        <label for="Root cause">Root Cause:</label>
-        <textarea id="Root cause" name="Root cause"></textarea><br><br>
-
-        <!-- Submit Button -->
-        <button type="submit">Add Issue</button>
-    </form>
-
-    <!-- Return to Main Menu -->
-    <div class="button-container">
-        <a href="{{ url_for('menu') }}" class=" main-menu-button">Return to Main Menu</a>
+                    <!-- Title -->
+                    <div class="col-md-6 mb-3">
+                        <label for="Title" class="form-label">Title:</label>
+                        <input type="text" class="form-control" id="Title" name="Title" required
+                               placeholder="Brief description of the issue">
+                    </div>
+                    
+                    <!-- Severity -->
+                    <div class="col-md-6 mb-3">
+                        <label for="Severity" class="form-label">Severity:</label>
+                        <select class="form-select" id="Severity" name="Severity" required>
+                            <option value="">Select Severity</option>
+                            <option value="1">1 - Customer facing function down</option>
+                            <option value="2">2 - Customer facing function impaired</option>
+                            <option value="2.5">2.5 - [Business hours] Customer facing function impaired</option>
+                            <option value="3">3 - Group productivity impaired</option>
+                            <option value="4">4 - Individual productivity impaired</option>
+                            <option value="5">5 - Productivity not impaired</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="col-md-6 mb-3">
+                        <label for="Status" class="form-label">Status:</label>
+                        <select class="form-select" id="Status" name="Status" required>
+                            <option value="">Select Status</option>
+                            <option value="Assigned">Assigned</option>
+                            <option value="Researching">Researching</option>
+                            <option value="Work in Progress">Work in Progress</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Assigned Group -->
+                    <div class="col-md-6 mb-3">
+                        <label for="AssignedGroup" class="form-label">Assigned Group:</label>
+                        <input type="text" class="form-control" id="AssignedGroup" name="AssignedGroup" required
+                               placeholder="e.g., Development, QA, Operations">
+                    </div>
+                    
+                    <!-- Assignee Identity -->
+                    <div class="col-md-6 mb-3">
+                        <label for="AssigneeIdentity" class="form-label">Assignee Identity:</label>
+                        <input type="text" class="form-control" id="AssigneeIdentity" name="AssigneeIdentity" required
+                               placeholder="Person responsible for this issue">
+                    </div>
+                    
+                    <!-- Create Date -->
+                    <div class="col-md-6 mb-3">
+                        <label for="CreateDate" class="form-label">Create Date:</label>
+                        <input type="date" class="form-control" id="CreateDate" name="CreateDate" required>
+                        <div class="form-text">Will be converted to ISO8601 format</div>
+                    </div>
+                    
+                    <!-- Issue Open -->
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" id="Issue open" name="Issue open" checked>
+                            <label class="form-check-label" for="Issue open">Issue is open</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Root Cause -->
+                    <div class="col-md-12 mb-3">
+                        <label for="Root cause" class="form-label">Root Cause:</label>
+                        <textarea class="form-control" id="Root cause" name="Root cause" rows="4"
+                                  placeholder="Required if issue is closed"></textarea>
+                        <div class="form-text">Describe what caused this issue</div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                    <button type="submit" class="btn btn-success">Add Issue</button>
+                    <a href="{{ url_for('menu') }}" class="btn btn-secondary">Return to Main Menu</a>
+                </div>
+            </form>
+        </div>
     </div>
-    {% endblock %}
-</body>
-
-</html>
+</div>
+{% endblock %}

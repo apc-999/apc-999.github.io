@@ -1,73 +1,105 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../resources/style.css">
-    <title>Update Issue</title>
-</head>
+{% block title %}
+Update Issue
+{% endblock %}
 
-<body>
-    {% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Update Issue</h1>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            Edit Issue: {{ issue[1] }}
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="row">
+                    <!-- ShortId (read-only) -->
+                    <div class="col-md-6 mb-3">
+                        <label for="ShortId" class="form-label">Short ID:</label>
+                        <input type="text" class="form-control" id="ShortId" name="ShortId" value="{{ issue[0] }}" readonly>
+                    </div>
 
-    {% block title %}
-    Update Issue
-    {% endblock %}
-
-    {% block content %}
-    <h1>Update Issue</h1>
-    <form method="POST" action="{{ url_for('update_issue', ticket_id=issue[0]) }}">
-
-        <!-- Title -->
-        <label for="Title">Title:</label>
-        <input type="text" id="Title" name="Title" value="{{ issue[1] }}" required><br><br>
-
-        <!-- Severity -->
-        <label for="Severity">Severity:</label>
-        <select id="Severity" name="Severity" required>
-            <option value="">Select Severity</option>
-            <option value="1" {% if issue[2]=='1' %}selected{% endif %}>1 - Customer facing function down</option>
-            <option value="2" {% if issue[2]=='2' %}selected{% endif %}>2 - Customer facing function impaired</option>
-            <option value="2.5" {% if issue[2]=='2.5' %}selected{% endif %}>2.5 - [Business hours] Customer facing
-                function impaired</option>
-            <option value="3" {% if issue[2]=='3' %}selected{% endif %}>3 - Group productivity impaired</option>
-            <option value="4" {% if issue[2]=='4' %}selected{% endif %}>4 - Individual productivity impaired</option>
-            <option value="5" {% if issue[2]=='5' %}selected{% endif %}>5 - Productivity not impaired</option>
-        </select><br><br>
-
-        <!-- Status -->
-        <label for="Status">Status:</label>
-        <select id="Status" name="Status" required>
-            <option value="">Select Status</option>
-            <option value="Assigned" {% if issue[3]=='Assigned' %}selected{% endif %}>Assigned</option>
-            <option value="Researching" {% if issue[3]=='Researching' %}selected{% endif %}>Researching</option>
-            <option value="Work in Progress" {% if issue[3]=='Work in Progress' %}selected{% endif %}>Work in Progress
-            </option>
-            <option value="Resolved" {% if issue[3]=='Resolved' %}selected{% endif %}>Resolved</option>
-        </select><br><br>
-
-        <!-- Assigned Group -->
-        <label for="AssignedGroup">Assigned Group:</label>
-        <input type="text" id="AssignedGroup" name="AssignedGroup" value="{{ issue[4] }}" required><br><br>
-
-        <!-- Assignee Identity -->
-        <label for="AssigneeIdentity">Assignee Identity:</label>
-        <input type="text" id="AssigneeIdentity" name="AssigneeIdentity" value="{{ issue[5] }}" required><br><br>
-
-        <!-- Root Cause -->
-        <label for="Root cause">Root Cause:</label>
-        <textarea id="Root cause" name="Root cause">{{ issue[9] }}</textarea><br><br>
-
-        <!-- Submit Button -->
-        <button type="submit">Update Issue</button>
-    </form>
-
-    <!-- Return to Main Menu -->
-    <div class="button-container">
-        <a href="{{ url_for('menu') }}" class="main-menu-button">Return to Main Menu</a>
+                    <!-- Title -->
+                    <div class="col-md-6 mb-3">
+                        <label for="Title" class="form-label">Title:</label>
+                        <input type="text" class="form-control" id="Title" name="Title" value="{{ issue[1] }}">
+                    </div>
+                    
+                    <!-- Severity -->
+                    <div class="col-md-6 mb-3">
+                        <label for="Severity" class="form-label">Severity:</label>
+                        <select class="form-select" id="Severity" name="Severity">
+                            <option value="1" {% if issue[2] == '1' %}selected{% endif %}>1 - Customer facing function down</option>
+                            <option value="2" {% if issue[2] == '2' %}selected{% endif %}>2 - Customer facing function impaired</option>
+                            <option value="2.5" {% if issue[2] == '2.5' %}selected{% endif %}>2.5 - [Business hours] Customer facing function impaired</option>
+                            <option value="3" {% if issue[2] == '3' %}selected{% endif %}>3 - Group productivity impaired</option>
+                            <option value="4" {% if issue[2] == '4' %}selected{% endif %}>4 - Individual productivity impaired</option>
+                            <option value="5" {% if issue[2] == '5' %}selected{% endif %}>5 - Productivity not impaired</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="col-md-6 mb-3">
+                        <label for="Status" class="form-label">Status:</label>
+                        <select class="form-select" id="Status" name="Status">
+                            <option value="Assigned" {% if issue[3] == 'Assigned' %}selected{% endif %}>Assigned</option>
+                            <option value="Researching" {% if issue[3] == 'Researching' %}selected{% endif %}>Researching</option>
+                            <option value="Work in Progress" {% if issue[3] == 'Work in Progress' %}selected{% endif %}>Work in Progress</option>
+                            <option value="Resolved" {% if issue[3] == 'Resolved' %}selected{% endif %}>Resolved</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Assigned Group -->
+                    <div class="col-md-6 mb-3">
+                        <label for="AssignedGroup" class="form-label">Assigned Group:</label>
+                        <input type="text" class="form-control" id="AssignedGroup" name="AssignedGroup" value="{{ issue[4] }}">
+                    </div>
+                    
+                    <!-- Assignee Identity -->
+                    <div class="col-md-6 mb-3">
+                        <label for="AssigneeIdentity" class="form-label">Assignee Identity:</label>
+                        <input type="text" class="form-control" id="AssigneeIdentity" name="AssigneeIdentity" value="{{ issue[5] }}">
+                    </div>
+                    
+                    <!-- Create Date (read-only) -->
+                    <div class="col-md-6 mb-3">
+                        <label for="CreateDate" class="form-label">Create Date:</label>
+                        <input type="text" class="form-control" id="CreateDate" name="CreateDate" value="{{ issue[6] }}" readonly>
+                        <div class="form-text">Original creation date (cannot be modified)</div>
+                    </div>
+                    
+                    <!-- Last Updated Date (read-only) -->
+                    <div class="col-md-6 mb-3">
+                        <label for="LastUpdatedDate" class="form-label">Last Updated:</label>
+                        <input type="text" class="form-control" id="LastUpdatedDate" name="LastUpdatedDate" value="{{ issue[7] }}" readonly>
+                        <div class="form-text">Will be updated automatically</div>
+                    </div>
+                    
+                    <!-- Issue Open -->
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" id="Issue open" name="Issue open" {% if issue[8] == 'TRUE' %}checked{% endif %}>
+                            <label class="form-check-label" for="Issue open">Issue is open</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Root Cause -->
+                    <div class="col-md-12 mb-3">
+                        <label for="Root cause" class="form-label">Root Cause:</label>
+                        <textarea class="form-control" id="Root cause" name="Root cause" rows="4">{{ issue[9] }}</textarea>
+                        <div class="form-text">Required if issue is closed</div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                    <button type="submit" class="btn btn-primary">Update Issue</button>
+                    <a href="{{ url_for('show_issues') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
     </div>
-    {% endblock %}
-</body>
-
-</html>
+</div>
+{% endblock %}
