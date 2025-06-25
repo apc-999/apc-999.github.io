@@ -69,18 +69,24 @@ python test.py
 
 ## CI/CD Pipeline
 
-This project uses GitHub Actions for continuous integration and deployment:
+This project uses GitHub Actions for a comprehensive CI/CD pipeline with the following stages:
 
-- **Testing**: Automatically runs unit tests on Python 3.8, 3.9, and 3.10 with code coverage reporting.
-- **Linting**: Checks code quality using flake8, black, and isort.
-- **Security Scanning**: Performs security analysis using Bandit and Safety.
-- **Deployment**: Builds and deploys the application when changes are pushed to the main branch.
+1. **Code Quality (Lint)**: Checks code quality using flake8, black, and isort.
+2. **Security Scanning**: Performs security analysis using Bandit and Safety.
+3. **Unit Tests**: Runs tests on Python 3.8, 3.9, and 3.10.
+4. **Build**: Creates a Docker image for the application.
+5. **Deploy to Staging**: Deploys the application to a staging environment.
+6. **Integration Tests**: Runs integration tests against the staging environment.
+7. **Deploy to Production**: Deploys the application to the production environment.
+8. **Post-Deployment Verification**: Verifies the deployment with health checks and smoke tests.
 
 GitHub Actions workflows are located in the `.github/workflows` directory:
-- `python-tests.yml`: Runs unit tests and generates coverage reports
-- `python-lint.yml`: Performs code quality checks
-- `security-scan.yml`: Scans for security vulnerabilities
-- `deploy.yml`: Handles the build and deployment process
+- `ci-cd-pipeline.yml`: The main comprehensive pipeline with all stages
+- `python-tests.yml`: Standalone test workflow
+- `python-lint.yml`: Standalone linting workflow
+- `security-scan.yml`: Standalone security scanning workflow
+- `deploy.yml`: Standalone deployment workflow
+- `docker-build.yml`: Standalone Docker build workflow
 
 ## Access
 
