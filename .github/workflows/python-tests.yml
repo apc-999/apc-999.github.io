@@ -27,11 +27,6 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install pytest pytest-cov
         
-    - name: Run tests with pytest
+    - name: Run tests
       run: |
-        pytest src/test.py -v --cov=src
-        
-    - name: Upload coverage report
-      uses: codecov/codecov-action@v3
-      with:
-        fail_ci_if_error: false
+        pytest src/test.py -v
