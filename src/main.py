@@ -1,16 +1,16 @@
-import sqlite3
+from sqlite3 import connect, Row, IntegrityError
 import os
 import datetime
 import sys
 import dateutil.parser
-import hashlib
+from hashlib import sha256
 from flask import Flask, render_template, redirect, url_for, g, request, flash, session
+import logging
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__, template_folder='../templates', static_folder='../resources', static_url_path='/resources')
 app.secret_key = 'QAsucks'
 
-# Define paths for resources
 resources = os.path.join(app.root_path, os.pardir) + "/resources/"
 app.config['UPLOAD_FOLDER'] = os.path.join(resources, 'static/images')
 
@@ -23,7 +23,7 @@ db_path = os.path.join(resources, "data.db")
 
 # Function to initialise the database and create necessary tables
 def init_db():
-    conn = sqlite3.connect(db_path)
+    conn = connect(db_path)
     cursor = conn.cursor()
     # Create data table
     cursor.execute('''
@@ -58,13 +58,13 @@ init_db()
 
 # Function to hash passwords
 def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    return sha256(password.encode()).hexdigest()
 
 # Database connection management
 def get_db():
     if 'db' not in g:
-        g.db = sqlite3.connect(db_path)
-        g.db.row_factory = sqlite3.Row
+        g.db = connect(db_path)
+        g.db.row_factory = Row
     return g.db
 
 # Function to get user information from the database
@@ -113,12 +113,13 @@ def get_headers():
     return [column[1] for column in columns_info]
 
 # Function to delete a row based on ShortId
+
 def delete_row(short_id):
     with get_db() as db:
         cursor = db.cursor()
         cursor.execute('DELETE FROM data WHERE ShortId = ?', (short_id,))
         db.commit()
-    print(f"Row with ShortId {short_id} has been deleted.")
+    logging.info(f"Row with ShortId {short_id} has been deleted.")
 
 # Function to update a row based on ShortId
 def update_row(short_id, column, new_value):
@@ -126,7 +127,7 @@ def update_row(short_id, column, new_value):
         cursor = db.cursor()
         cursor.execute(f'UPDATE data SET "{column}" = ? WHERE ShortId = ?', (new_value, short_id))
         db.commit()
-    print(f"Ticket ShortId {short_id} has been updated.")
+    logging.info(f"Ticket ShortId {short_id} has been updated.")
 
 # Function to get the current datetime in ISO format
 def current_datetime():
@@ -266,7 +267,7 @@ def resolve_issue():
 
         return redirect(url_for('resolve_issue'))
     if not unresolved_issues:
-        print("There are no issues to resolve, please add some.")
+        logging.info("There are no issues to resolve, please add some.")
         error=error_message("No issues to resolve.")
 
     return render_template('resolve_issue.html', error=error,unresolved_issues=unresolved_issues, all_rows=all_rows, headers=headers, current_root_cause=current_root_cause)
@@ -368,7 +369,7 @@ def signup():
             db.close()
             flash('Sign-up successful! You can now log in.', 'success')
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
+        except IntegrityError:
             error=error_message('Username already exists. Please choose a different one.')
     
     return render_template('signup.html',error=error)
@@ -461,7 +462,7 @@ def admin():
                                   (new_username, hashed_password, new_role, profile_img_path))
                     db.commit()
                     error = "User added successfully"
-                except sqlite3.IntegrityError:
+                except IntegrityError:
                     error = error_message("Username already exists")
         else:
             user_id = request.form.get('user_id')
