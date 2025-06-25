@@ -5,6 +5,7 @@ import sys
 import dateutil.parser
 import hashlib
 from flask import Flask, render_template, redirect, url_for, g, request, flash, session
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__, template_folder='../templates', static_folder='../resources', static_url_path='/resources')
 app.secret_key = 'QAsucks'
@@ -434,28 +435,68 @@ def admin():
     cursor = db.cursor()
     
     if request.method == 'POST':
-        user_id = request.form.get('user_id')
-        username = request.form.get('username')
-        role = request.form.get('role')
-        profile_image=request.files.get('profile_image')
-        if 'reset_password' in request.form:
-            cursor.execute('UPDATE users SET password = ? WHERE id = ?', ('default_password', user_id))
-        elif 'reset_image' in request.form:
-            cursor.execute('UPDATE users SET "profile-img" = "https://media0.giphy.com/media/l0HlNRowezfsJcFSo/200w.gif" WHERE id = ?', (user_id))
-        else:
-            if profile_image:
-                filename = secure_filename(profile_image.filename)
-                full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                profile_image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                cursor.execute('UPDATE users SET username = ?, role = ?, "profile-img" = ? WHERE id = ?',
-                               (username, role, full_path, user_id))
+        # Handle adding a new user
+        if 'add_user' in request.form:
+            new_username = request.form.get('new_username')
+            new_password = request.form.get('new_password')
+            new_role = request.form.get('new_role')
+            new_profile_image = request.files.get('new_profile_image')
+            
+            if not new_username or not new_password:
+                error = error_message("Username and password are required")
             else:
-                cursor.execute('UPDATE users SET username = ?, role = ? WHERE id = ?',
-                               (username, role, user_id))
+                try:
+                    hashed_password = hash_password(new_password)
+                    
+                    # Handle profile image if provided
+                    profile_img_path = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+                    if new_profile_image and new_profile_image.filename:
+                        filename = secure_filename(new_profile_image.filename)
+                        full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                        new_profile_image.save(full_path)
+                        # Use proper URL for static files
+                        profile_img_path = f"/resources/static/images/{filename}"
+                    
+                    cursor.execute("INSERT INTO users (username, password, role, \"profile-img\") VALUES (?, ?, ?, ?)", 
+                                  (new_username, hashed_password, new_role, profile_img_path))
+                    db.commit()
+                    error = "User added successfully"
+                except sqlite3.IntegrityError:
+                    error = error_message("Username already exists")
+        else:
+            user_id = request.form.get('user_id')
+            username = request.form.get('username')
+            role = request.form.get('role')
+            profile_image=request.files.get('profile_image')
+            
+            # Handle delete user action
+            if 'delete_user' in request.form:
+                # Prevent deleting the current user
+                if int(user_id) == session['user_id']:
+                    error = error_message("You cannot delete your own account")
+                else:
+                    cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+                    error = "User deleted successfully"
+            elif 'reset_password' in request.form:
+                cursor.execute('UPDATE users SET password = ? WHERE id = ?', ('default_password', user_id))
+            elif 'reset_image' in request.form:
+                cursor.execute('UPDATE users SET "profile-img" = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" WHERE id = ?', (user_id,))
+            else:
+                if profile_image and profile_image.filename:
+                    filename = secure_filename(profile_image.filename)
+                    full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    profile_image.save(full_path)
+                    # Use proper URL for static files
+                    profile_img_path = f"/resources/static/images/{filename}"
+                    cursor.execute('UPDATE users SET username = ?, role = ?, "profile-img" = ? WHERE id = ?',
+                                  (username, role, profile_img_path, user_id))
+                else:
+                    cursor.execute('UPDATE users SET username = ?, role = ? WHERE id = ?',
+                                  (username, role, user_id))
 
         db.commit()
         db.close()
-        return redirect(url_for('admin', error="Success"))
+        return redirect(url_for('admin', error=error or "Success"))
 
     cursor.execute('SELECT * FROM users')
     users = cursor.fetchall()
