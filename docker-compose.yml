@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./resources:/app/resources
+    environment:
+      - FLASK_APP=src/main.py
+      - FLASK_ENV=production
+    restart: always

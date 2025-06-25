@@ -10,6 +10,7 @@ This is an Issue Tracking System built with Flask and SQLite, allowing users to 
 - [Usage](#usage)
 - [User Accounts](#user-accounts)
 - [Unit Testing](#unit-testing)
+- [CI/CD Pipeline](#ci-cd-pipeline)
 - [Access](#access)
 
 ## Features
@@ -65,6 +66,21 @@ Unit tests are included in `test.py`. You can run the tests to ensure the system
 ```bash
 python test.py
 ```
+
+## CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **Testing**: Automatically runs unit tests on Python 3.8, 3.9, and 3.10 with code coverage reporting.
+- **Linting**: Checks code quality using flake8, black, and isort.
+- **Security Scanning**: Performs security analysis using Bandit and Safety.
+- **Deployment**: Builds and deploys the application when changes are pushed to the main branch.
+
+GitHub Actions workflows are located in the `.github/workflows` directory:
+- `python-tests.yml`: Runs unit tests and generates coverage reports
+- `python-lint.yml`: Performs code quality checks
+- `security-scan.yml`: Scans for security vulnerabilities
+- `deploy.yml`: Handles the build and deployment process
 
 ## Access
 
