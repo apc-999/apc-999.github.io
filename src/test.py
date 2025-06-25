@@ -30,6 +30,13 @@ class TestFlaskAppDatabase(unittest.TestCase):
         self.cursor = self.conn.cursor()
 
     def tearDown(self):
+        # Clean up test users after each test
+        try:
+            self.cursor.execute("DELETE FROM users WHERE username IN ('regular_user', 'admin_user', 'test_user')")
+            self.conn.commit()
+        except:
+            pass
+        
         self.app_context.pop()
         self.conn.close()
 
@@ -98,6 +105,10 @@ class TestFlaskAppDatabase(unittest.TestCase):
         
     def test_user_role_permissions(self):
         """Test that admin and regular users have different permissions"""
+        # Clean up existing test users first
+        self.cursor.execute("DELETE FROM users WHERE username IN ('regular_user', 'admin_user')")
+        self.conn.commit()
+        
         # Create a regular user
         self.cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
                            ("regular_user", hash_password("password"), "user"))
@@ -129,13 +140,14 @@ class TestFlaskAppDatabase(unittest.TestCase):
             
     def test_validation_rules(self):
         """Test that validation rules are enforced"""
-        # Create admin user first if not exists
-        try:
-            self.cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
-                              ("admin_user", hash_password("password"), "admin"))
-            self.conn.commit()
-        except:
-            pass  # User might already exist
+        # Clean up existing test users first
+        self.cursor.execute("DELETE FROM users WHERE username = 'admin_user'")
+        self.conn.commit()
+        
+        # Create admin user
+        self.cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
+                          ("admin_user", hash_password("password"), "admin"))
+        self.conn.commit()
             
         # Test invalid severity value
         with self.client as c:
@@ -158,7 +170,11 @@ class TestFlaskAppDatabase(unittest.TestCase):
             
     def test_api_endpoints(self):
         """Test API endpoints for CRUD operations"""
-        # Create admin user first
+        # Clean up existing test users first
+        self.cursor.execute("DELETE FROM users WHERE username = 'admin_user'")
+        self.conn.commit()
+        
+        # Create admin user
         self.cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", 
                           ("admin_user", hash_password("password"), "admin"))
         self.conn.commit()
