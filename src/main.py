@@ -6,7 +6,7 @@ import dateutil.parser
 import hashlib
 from flask import Flask, render_template, redirect, url_for, g, request, flash, session
 
-app = Flask(__name__, template_folder='../templates', static_folder='../resources')
+app = Flask(__name__, template_folder='../templates', static_folder='../resources', static_url_path='/resources')
 app.secret_key = 'QAsucks'
 
 # Define paths for resources
