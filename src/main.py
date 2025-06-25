@@ -294,12 +294,19 @@ def update_issue():
         updated_data = {}
         headers = get_headers()
         
-        for header in headers:
-            updated_data[header] = request.form.get(header)
+        # Handle Issue open checkbox separately
+        issue_open = 'TRUE' if request.form.get('Issue open') == 'on' else 'FALSE'
+        update_row(ticket_id, 'Issue open', issue_open)
         
-        for header, new_value in updated_data.items():
-            if new_value and new_value.strip(): 
-                update_row(ticket_id, header, new_value)
+        # Update LastUpdatedDate
+        update_row(ticket_id, 'LastUpdatedDate', current_datetime())
+        
+        # Process other fields
+        for header in headers:
+            if header != 'Issue open' and header != 'LastUpdatedDate':
+                value = request.form.get(header)
+                if value and value.strip():
+                    update_row(ticket_id, header, value)
         
         return redirect(url_for('show_issues')) 
 
